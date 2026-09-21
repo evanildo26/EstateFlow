@@ -280,8 +280,8 @@ or click the green **Start** button.
 > Use a dedicated demo account only. Do not put a real employee's password in this README.
 
 ```text
-Email:    <ADD TEST ACCOUNT EMAIL HERE>
-Password: <ADD TEST ACCOUNT PASSWORD HERE>
+Email:    <demo@estateflow.local>
+Password: <EstateFlowDemo123!>
 ```
 
 A new demo account may initially show **no estates** until estates are created for that account.
