@@ -1,0 +1,179 @@
+using EstateFlow.Core.Dtos;
+
+namespace EstateFlow.Desktop.Services;
+
+public interface IApiClient
+{
+    // ─────────────────────────────────────────────
+    // Authentication
+    // ─────────────────────────────────────────────
+
+    Task<LoginResponse> LoginAsync(
+        string email,
+        string password);
+
+    Task<LoginResponse> VerifyTwoFactorAsync(
+        string email,
+        string code);
+
+    // ─────────────────────────────────────────────
+    // Estates
+    // ─────────────────────────────────────────────
+
+    Task<List<EstateSummaryDto>> GetEstatesAsync();
+
+    Task<EstateDto?> GetEstateAsync(
+        Guid estateId);
+
+    Task<Guid> CreateEstateAsync(
+        CreateEstateRequest request);
+
+    Task UpdateEstateAsync(
+        Guid estateId,
+        UpdateEstateRequest request);
+
+    Task DeleteEstateAsync(
+        Guid estateId);
+
+    // ─────────────────────────────────────────────
+    // Progress
+    // ─────────────────────────────────────────────
+
+    Task AddProgressStageAsync(
+        Guid estateId,
+        CreateProgressStageRequest request);
+
+    Task UpdateProgressStageAsync(
+        Guid estateId,
+        UpdateProgressStageRequest request);
+
+    Task DeleteProgressStageAsync(
+        Guid estateId,
+        Guid stageId);
+
+    // ─────────────────────────────────────────────
+    // Diary
+    // ─────────────────────────────────────────────
+
+    Task<List<DiaryEntryWithEstateDto>>
+        GetAllDiaryEntriesAsync();
+
+    Task AddDiaryEntryAsync(
+        Guid estateId,
+        CreateDiaryEntryRequest request);
+
+    Task UpdateDiaryEntryStatusAsync(
+        Guid estateId,
+        Guid diaryId,
+        bool isCompleted);
+
+    Task DeleteDiaryEntryAsync(
+        Guid estateId,
+        Guid diaryId);
+
+    Task SendDiaryEmailAsync(
+        Guid estateId,
+        Guid diaryId,
+        SendDiaryEmailRequest request);
+
+    // ─────────────────────────────────────────────
+    // Reports
+    // ─────────────────────────────────────────────
+
+    Task<List<ReportSettingDto>>
+        GetReportSettingsAsync();
+
+    Task ToggleReportPauseAsync(
+        Guid estateId,
+        bool isPaused);
+
+    // ─────────────────────────────────────────────
+    // Executors
+    // ─────────────────────────────────────────────
+
+    Task AddExecutorAsync(
+        Guid estateId,
+        CreateExecutorRequest request);
+
+    Task DeleteExecutorAsync(
+        Guid estateId,
+        Guid executorId);
+
+    // ─────────────────────────────────────────────
+    // Beneficiaries
+    // ─────────────────────────────────────────────
+
+    Task AddBeneficiaryAsync(
+        Guid estateId,
+        CreateBeneficiaryRequest request);
+
+    Task DeleteBeneficiaryAsync(
+        Guid estateId,
+        Guid beneficiaryId);
+
+    // ─────────────────────────────────────────────
+    // Movable Assets
+    // ─────────────────────────────────────────────
+
+    Task AddMovableAssetAsync(
+        Guid estateId,
+        CreateMovableAssetRequest request);
+
+    Task DeleteMovableAssetAsync(
+        Guid estateId,
+        Guid assetId);
+
+    // ─────────────────────────────────────────────
+    // Immovable Properties
+    // ─────────────────────────────────────────────
+
+    Task AddImmovablePropertyAsync(
+        Guid estateId,
+        CreateImmovablePropertyRequest request);
+
+    Task DeleteImmovablePropertyAsync(
+        Guid estateId,
+        Guid assetId);
+
+    // ─────────────────────────────────────────────
+    // Financial Claims
+    // ─────────────────────────────────────────────
+
+    Task AddFinancialClaimAsync(
+        Guid estateId,
+        CreateFinancialClaimRequest request);
+
+    Task DeleteFinancialClaimAsync(
+        Guid estateId,
+        Guid claimId);
+
+    // ─────────────────────────────────────────────
+    // Letters
+    // ─────────────────────────────────────────────
+
+    Task<string> GenerateVehicleLetterToTempFileAsync(
+        Guid estateId,
+        Guid assetId);
+
+    Task<string> GenerateInstitutionLetterToTempFileAsync(
+        Guid estateId,
+        Guid claimId);
+
+    // ─────────────────────────────────────────────
+    // Scanned Documents
+    // ─────────────────────────────────────────────
+
+    Task UploadDocumentAsync(
+        Guid estateId,
+        string filePath,
+        string documentType);
+
+    Task<string> DownloadDocumentToTempFileAsync(
+        Guid estateId,
+        Guid documentId,
+        string suggestedFileName);
+
+    Task DeleteDocumentAsync(
+        Guid estateId,
+        Guid documentId);
+}

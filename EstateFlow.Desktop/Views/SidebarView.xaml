@@ -1,0 +1,54 @@
+﻿<UserControl x:Class="EstateFlow.Desktop.Views.SidebarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Width="212" Background="{StaticResource BgPanelBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="8,16,8,0">
+            <TextBlock Text="NAVIGATION" Style="{StaticResource MonoLabelStyle}"
+                       FontSize="9" Margin="12,0,0,8"/>
+
+            <Button Content="Dashboard" Command="{Binding NavigateCommand}" CommandParameter="dashboard"
+                    HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                    Foreground="{StaticResource TextBrightBrush}" FontFamily="{StaticResource SansFont}"
+                    FontSize="13" Padding="12,8" Cursor="Hand"/>
+
+            <Button Content="Estates" Command="{Binding NavigateCommand}" CommandParameter="dashboard"
+                    HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                    Foreground="{StaticResource TextMutedBrush}" FontFamily="{StaticResource SansFont}"
+                    FontSize="13" Padding="12,8" Cursor="Hand"/>
+
+            <Button Content="Diary" Command="{Binding NavigateCommand}" CommandParameter="diary"
+                    HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                    Foreground="{StaticResource TextMutedBrush}" FontFamily="{StaticResource SansFont}"
+                    FontSize="13" Padding="12,8" Cursor="Hand"/>
+
+            <Button Content="Documents" Command="{Binding NavigateCommand}" CommandParameter="document-scan"
+                    HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                    Foreground="{StaticResource TextMutedBrush}" FontFamily="{StaticResource SansFont}"
+                    FontSize="13" Padding="12,8" Cursor="Hand"/>
+
+            <Button Content="Reports" Command="{Binding NavigateCommand}" CommandParameter="reports"
+                    HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                    Foreground="{StaticResource TextMutedBrush}" FontFamily="{StaticResource SansFont}"
+                    FontSize="13" Padding="12,8" Cursor="Hand"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="12,0,12,12">
+            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="S. Abrahams" Style="{StaticResource BodyTextStyle}" FontSize="12"/>
+                    <TextBlock Text="Controller" Style="{StaticResource MonoLabelStyle}" FontSize="10" Margin="0,2,0,10"/>
+                    <Button Content="Sign out" Command="{Binding LogoutCommand}"
+                            HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0"
+                            Foreground="{StaticResource TextDimBrush}" FontFamily="{StaticResource SansFont}"
+                            FontSize="12" Padding="0" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+</UserControl>
