@@ -1,5 +1,5 @@
-﻿using EstateFlow.Api.Services.Letters;
-using EstateFlow.Api.Services.Notifications;
+using System.Security.Claims;
+using EstateFlow.Api.Services.Letters;
 using EstateFlow.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,18 +11,18 @@ namespace EstateFlow.Api.Controllers;
 [Route("api/estates/{estateId:guid}/letters")]
 public class LettersController : ControllerBase
 {
+    // Lets the desktop tell the controller whether a copy was filed.
+    public const string SavedHeader = "X-EstateFlow-Letter-Filed";
+
     private readonly IEstateRepository _repository;
-    private readonly LetterGeneratorFactory _factory;
-    private readonly INotificationService _notificationService;
+    private readonly LetterService _letters;
 
     public LettersController(
         IEstateRepository repository,
-        LetterGeneratorFactory factory,
-        INotificationService notificationService)
+        LetterService letters)
     {
         _repository = repository;
-        _factory = factory;
-        _notificationService = notificationService;
+        _letters = letters;
     }
 
     [HttpPost("vehicle/{assetId:guid}")]
@@ -53,19 +53,14 @@ public class LettersController : ControllerBase
             });
         }
 
-        var generator =
-            _factory.Create("Vehicle");
+        var result = await _letters.GenerateAsync(
+            estate,
+            LetterTypes.VehicleTransfer,
+            asset,
+            "Vehicle transfer letter",
+            CurrentUserName());
 
-        var letter =
-            generator.Generate(
-                estate,
-                asset);
-
-        return File(
-            System.Text.Encoding.UTF8.GetBytes(
-                letter.Content),
-            "text/plain",
-            letter.FileName);
+        return LetterFile(result);
     }
 
     [HttpPost("institution/{claimId:guid}")]
@@ -96,18 +91,26 @@ public class LettersController : ControllerBase
             });
         }
 
-        var generator =
-            _factory.Create("FinancialClaim");
+        var result = await _letters.GenerateAsync(
+            estate,
+            LetterTypes.InstitutionNotification,
+            claim,
+            "Notification of death letter",
+            CurrentUserName());
 
-        var letter =
-            generator.Generate(
-                estate,
-                claim);
+        return LetterFile(result);
+    }
+
+    private FileContentResult LetterFile(LetterResult result)
+    {
+        Response.Headers[SavedHeader] = result.SavedToEstate ? "true" : "false";
 
         return File(
-            System.Text.Encoding.UTF8.GetBytes(
-                letter.Content),
-            "text/plain",
-            letter.FileName);
+            result.Letter.Data,
+            result.Letter.ContentType,
+            result.Letter.FileName);
     }
+
+    private string CurrentUserName() =>
+        User.FindFirstValue(ClaimTypes.Name) ?? "EstateFlow";
 }

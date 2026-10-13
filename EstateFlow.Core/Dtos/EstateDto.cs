@@ -17,9 +17,17 @@ public class EstateDto
     public List<MovableAssetDto> MovableAssets { get; set; } = new();
     public List<ImmovablePropertyDto> ImmovableProperties { get; set; } = new();
     public List<FinancialClaimDto> FinancialClaims { get; set; } = new();
+    public List<LiabilityDto> Liabilities { get; set; } = new();
     public List<DiaryEntryDto> DiaryEntries { get; set; } = new();
     public List<ProgressStageDto> ProgressStages { get; set; } = new();
     public List<ScannedDocumentDto> ScannedDocuments { get; set; } = new();
+
+    // Stage checklist for the Master's process, with deadlines.
+    public EstateProgressDto? Progress { get; set; }
+
+    public decimal TotalAssets { get; set; }
+    public decimal TotalLiabilities { get; set; }
+    public decimal NetValue => TotalAssets - TotalLiabilities;
 }
 
 public class EstateControllerDto
@@ -109,4 +117,11 @@ public class ScannedDocumentDto
     public string DocumentType { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public DateTime UploadDate { get; set; }
+}
+public class LiabilityDto
+{
+    public Guid LiabilityId { get; set; }
+    public string CreditorName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public decimal Amount { get; set; }
 }

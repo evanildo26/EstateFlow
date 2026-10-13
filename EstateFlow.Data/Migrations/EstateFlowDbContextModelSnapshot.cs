@@ -94,6 +94,48 @@ namespace EstateFlow.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("EstateFlow.Core.Models.AuditEntry", b =>
+                {
+                    b.Property<long>("AuditEntryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("AuditEntryId"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("EstateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Target")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("TimestampUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AuditEntryId");
+
+                    b.HasIndex("TimestampUtc");
+
+                    b.HasIndex("EstateId", "TimestampUtc");
+
+                    b.ToTable("AuditEntries");
+                });
+
             modelBuilder.Entity("EstateFlow.Core.Models.AutomatedReport", b =>
                 {
                     b.Property<Guid>("ReportId")
@@ -156,6 +198,60 @@ namespace EstateFlow.Data.Migrations
                     b.HasIndex("EstateId");
 
                     b.ToTable("Beneficiaries");
+                });
+
+            modelBuilder.Entity("EstateFlow.Core.Models.CorrespondenceRecord", b =>
+                {
+                    b.Property<Guid>("CorrespondenceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("DocumentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("EstateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecipientEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SentBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CorrespondenceId");
+
+                    b.HasIndex("EstateId", "SentAtUtc");
+
+                    b.ToTable("Correspondence");
                 });
 
             modelBuilder.Entity("EstateFlow.Core.Models.Deceased", b =>
@@ -272,6 +368,41 @@ namespace EstateFlow.Data.Migrations
                     b.ToTable("Controllers");
                 });
 
+            modelBuilder.Entity("EstateFlow.Core.Models.EstateMilestone", b =>
+                {
+                    b.Property<Guid>("MilestoneId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CompletedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EstateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RecordedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.HasKey("MilestoneId");
+
+                    b.HasIndex("EstateId", "Stage")
+                        .IsUnique();
+
+                    b.ToTable("Milestones");
+                });
+
             modelBuilder.Entity("EstateFlow.Core.Models.Executor", b =>
                 {
                     b.Property<Guid>("ExecutorId")
@@ -358,6 +489,32 @@ namespace EstateFlow.Data.Migrations
                     b.HasIndex("EstateId");
 
                     b.ToTable("ImmovableProperties");
+                });
+
+            modelBuilder.Entity("EstateFlow.Core.Models.LetterTemplate", b =>
+                {
+                    b.Property<string>("LetterType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("LetterType");
+
+                    b.ToTable("LetterTemplates");
                 });
 
             modelBuilder.Entity("EstateFlow.Core.Models.Liability", b =>
@@ -638,6 +795,17 @@ namespace EstateFlow.Data.Migrations
                     b.Navigation("Estate");
                 });
 
+            modelBuilder.Entity("EstateFlow.Core.Models.CorrespondenceRecord", b =>
+                {
+                    b.HasOne("EstateFlow.Core.Models.Estate", "Estate")
+                        .WithMany("Correspondence")
+                        .HasForeignKey("EstateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Estate");
+                });
+
             modelBuilder.Entity("EstateFlow.Core.Models.Deceased", b =>
                 {
                     b.HasOne("EstateFlow.Core.Models.Estate", "Estate")
@@ -669,6 +837,17 @@ namespace EstateFlow.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Controller");
+                });
+
+            modelBuilder.Entity("EstateFlow.Core.Models.EstateMilestone", b =>
+                {
+                    b.HasOne("EstateFlow.Core.Models.Estate", "Estate")
+                        .WithMany("Milestones")
+                        .HasForeignKey("EstateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Estate");
                 });
 
             modelBuilder.Entity("EstateFlow.Core.Models.Executor", b =>
@@ -805,6 +984,8 @@ namespace EstateFlow.Data.Migrations
 
                     b.Navigation("Beneficiaries");
 
+                    b.Navigation("Correspondence");
+
                     b.Navigation("Deceased");
 
                     b.Navigation("DiaryEntries");
@@ -816,6 +997,8 @@ namespace EstateFlow.Data.Migrations
                     b.Navigation("ImmovableProperties");
 
                     b.Navigation("Liabilities");
+
+                    b.Navigation("Milestones");
 
                     b.Navigation("MovableAssets");
 

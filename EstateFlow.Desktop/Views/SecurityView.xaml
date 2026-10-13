@@ -1,0 +1,96 @@
+<UserControl x:Class="EstateFlow.Desktop.Views.SecurityView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="#F5F4F1">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border BorderBrush="#E4E2DD" BorderThickness="0,0,0,1" Padding="24,12">
+            <StackPanel>
+                <TextBlock Text="Security &amp; Two-Factor Authentication" FontFamily="{StaticResource SerifFont}" FontSize="17" Foreground="#16181C"/>
+                <TextBlock Text="{Binding UserName}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="#6B6E76" Margin="0,2,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" Padding="24" VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="620" HorizontalAlignment="Left">
+
+                <Border Background="#EFEAE4" Padding="12,8" Margin="0,0,0,12" CornerRadius="3"
+                        Visibility="{Binding Message, Converter={StaticResource StringToVisConverter}}">
+                    <TextBlock Text="{Binding Message}" FontFamily="{StaticResource SansFont}" FontSize="12" Foreground="#16181C"
+                               TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+                </Border>
+
+                <!-- ON -->
+                <Border Style="{StaticResource SectionCardBorderStyle}"
+                        Visibility="{Binding IsEnabled, Converter={StaticResource BoolToVisConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="TWO-FACTOR AUTHENTICATION" Style="{StaticResource SectionTitleStyle}"/>
+                        <TextBlock Text="✓  On" FontFamily="{StaticResource SerifFont}" FontSize="18" Foreground="#3F5B45"/>
+                        <TextBlock Text="When you sign in, EstateFlow asks for the 6-digit code from your authenticator app as well as your password."
+                                   Style="{StaticResource FieldLabelStyle}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        <TextBlock Text="Lost or replaced your phone? Ask a Firm Administrator to reset your two-factor authentication, then set it up again here."
+                                   Style="{StaticResource FieldLabelStyle}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- OFF -->
+                <Border Style="{StaticResource SectionCardBorderStyle}"
+                        Visibility="{Binding IsDisabled, Converter={StaticResource BoolToVisConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="TWO-FACTOR AUTHENTICATION" Style="{StaticResource SectionTitleStyle}"/>
+                        <TextBlock Text="Off" FontFamily="{StaticResource SerifFont}" FontSize="18" Foreground="#8B3A3A"/>
+                        <TextBlock Text="EstateFlow holds ID numbers, bank details and death certificates. A code from your phone means a stolen password alone is not enough to sign in. It takes about two minutes to set up."
+                                   Style="{StaticResource FieldLabelStyle}" TextWrapping="Wrap" Margin="0,8,0,14"/>
+                        <Button Content="Set up two-factor authentication"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Command="{Binding StartSetupCommand}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- SETUP -->
+                <Border Style="{StaticResource SectionCardBorderStyle}"
+                        Visibility="{Binding IsSettingUp, Converter={StaticResource BoolToVisConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="SET UP" Style="{StaticResource SectionTitleStyle}"/>
+
+                        <TextBlock Text="1.  Install an authenticator app on your phone (Microsoft Authenticator, Google Authenticator or Authy)."
+                                   Style="{StaticResource FieldValueStyle}" Margin="0,0,0,8"/>
+                        <TextBlock Text="2.  In the app, add an account and scan this code:"
+                                   Style="{StaticResource FieldValueStyle}" Margin="0,0,0,10"/>
+
+                        <Border Background="White" BorderBrush="#E4E2DD" BorderThickness="1" Padding="10"
+                                HorizontalAlignment="Left" Margin="18,0,0,10">
+                            <Image Source="{Binding QrCode}" Width="200" Height="200"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                   AutomationProperties.Name="QR code for your authenticator app"/>
+                        </Border>
+
+                        <TextBlock Text="Can't scan it? Enter this key in the app instead:"
+                                   Style="{StaticResource FieldLabelStyle}" Margin="18,0,0,4"/>
+                        <TextBox Text="{Binding ManualKey, Mode=OneWay}" IsReadOnly="True"
+                                 FontFamily="{StaticResource MonoFont}" FontSize="13"
+                                 BorderThickness="0" Background="Transparent" Margin="18,0,0,14"
+                                 AutomationProperties.Name="Manual setup key"/>
+
+                        <TextBlock Text="3.  Enter the 6-digit code the app now shows:"
+                                   Style="{StaticResource FieldValueStyle}" Margin="0,0,0,8"/>
+                        <TextBox Text="{Binding Code, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource QuickAddTextBox}"
+                                 FontFamily="{StaticResource MonoFont}" FontSize="16"
+                                 Width="140" HorizontalAlignment="Left" MaxLength="7" Margin="18,0,0,12"
+                                 AutomationProperties.Name="Six-digit code"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="18,0,0,0">
+                            <Button Content="Turn on" Style="{StaticResource AccentButtonStyle}" Command="{Binding EnableCommand}" Margin="0,0,10,0"/>
+                            <Button Content="Cancel" Style="{StaticResource OutlineButtonStyle}" Command="{Binding CancelSetupCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

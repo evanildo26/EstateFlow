@@ -1,0 +1,120 @@
+<UserControl x:Class="EstateFlow.Desktop.Views.EstateTabs.ImmovablePropertiesTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: EstateDetailViewModel (inherited from EstateDetailView). -->
+
+    <ScrollViewer Padding="20">
+        <StackPanel MaxWidth="700"
+                    HorizontalAlignment="Left">
+
+            <Border Style="{StaticResource SectionCardBorderStyle}">
+                <StackPanel>
+
+                    <TextBlock Text="ADD IMMOVABLE PROPERTY"
+                               Style="{StaticResource SectionTitleStyle}"/>
+
+                    <TextBlock Text="Description"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewPropertyDescription, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Title Deed Number"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewPropertyTitleDeedNumber, UpdateSourceTrigger=PropertyChanged}"
+                             FontFamily="{StaticResource MonoFont}"/>
+
+                    <TextBlock Text="Municipal Value (R)"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewPropertyMunicipalValue, UpdateSourceTrigger=PropertyChanged}"
+                             FontFamily="{StaticResource MonoFont}"/>
+
+                    <Button Content="+ Add Property"
+                            Command="{Binding AddImmovablePropertyCommand}"
+                            Background="#6E2A2A"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Padding="14,7"
+                            FontFamily="{StaticResource SansFont}"
+                            FontSize="12"
+                            Cursor="Hand"
+                            HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <ItemsControl ItemsSource="{Binding Estate.ImmovableProperties}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource SectionCardBorderStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0"
+                                            Margin="0,0,20,0">
+
+                                    <TextBlock Text="{Binding Description}"
+                                               FontFamily="{StaticResource SerifFont}"
+                                               FontSize="15"
+                                               Foreground="#16181C"
+                                               Margin="0,0,0,10"/>
+
+                                    <Grid Style="{StaticResource FieldRowGrid}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Title Deed Number"
+                                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding TitleDeedNumber}"
+                                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                                    </Grid>
+
+                                    <Grid Style="{StaticResource FieldRowGrid}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Municipal Value"
+                                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding MunicipalValue, StringFormat='R {0:N2}'}"
+                                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <Button Grid.Column="1"
+                                        Content="Remove"
+                                        Command="{Binding DataContext.DeleteImmovablePropertyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding AssetId}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Foreground="#8B3A3A"
+                                        FontFamily="{StaticResource SansFont}"
+                                        FontSize="11"
+                                        Cursor="Hand"
+                                        VerticalAlignment="Top"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

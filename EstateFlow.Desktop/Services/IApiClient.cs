@@ -13,7 +13,7 @@ public interface IApiClient
         string password);
 
     Task<LoginResponse> VerifyTwoFactorAsync(
-        string email,
+        string twoFactorToken,
         string code);
 
     // ─────────────────────────────────────────────
@@ -151,11 +151,11 @@ public interface IApiClient
     // Letters
     // ─────────────────────────────────────────────
 
-    Task<string> GenerateVehicleLetterToTempFileAsync(
+    Task<GeneratedLetterFile> GenerateVehicleLetterToTempFileAsync(
         Guid estateId,
         Guid assetId);
 
-    Task<string> GenerateInstitutionLetterToTempFileAsync(
+    Task<GeneratedLetterFile> GenerateInstitutionLetterToTempFileAsync(
         Guid estateId,
         Guid claimId);
 
@@ -176,4 +176,59 @@ public interface IApiClient
     Task DeleteDocumentAsync(
         Guid estateId,
         Guid documentId);
+
+    // ─────────────────────────────────────────────
+    // Liabilities, stage checklist, correspondence
+    // ─────────────────────────────────────────────
+
+    Task AddLiabilityAsync(Guid estateId, CreateLiabilityRequest request);
+
+    Task DeleteLiabilityAsync(Guid estateId, Guid liabilityId);
+
+    Task<EstateProgressDto> CompleteMilestoneAsync(Guid estateId, string stage, CompleteMilestoneRequest request);
+
+    Task<EstateProgressDto> ReopenMilestoneAsync(Guid estateId, string stage);
+
+    Task<List<CorrespondenceDto>> GetCorrespondenceAsync(Guid estateId);
+
+    Task InviteToPortalAsync(Guid estateId, InvitePortalUserRequest request);
+
+    // ─────────────────────────────────────────────
+    // Own account (2FA)
+    // ─────────────────────────────────────────────
+
+    Task<TwoFactorStatusDto> GetTwoFactorStatusAsync();
+
+    Task<TwoFactorSetupResponse> StartTwoFactorSetupAsync();
+
+    Task EnableTwoFactorAsync(string code);
+
+    // ─────────────────────────────────────────────
+    // Firm Administrator
+    // ─────────────────────────────────────────────
+
+    Task<List<StaffMemberDto>> GetStaffAsync();
+
+    Task CreateStaffAsync(RegisterRequest request);
+
+    Task<string> AdminStaffActionAsync(string userId, string action, object? body = null);
+
+    Task<List<AdminEstateDto>> GetAllEstatesAsync();
+
+    Task<string> ReassignEstateAsync(Guid estateId, Guid controllerId);
+
+    Task<List<AuditEntryDto>> GetAuditLogAsync(Guid? estateId, string? user, int take);
+
+    Task<List<LetterTemplateDto>> GetLetterTemplatesAsync();
+
+    Task<LetterTemplateDto> SaveLetterTemplateAsync(string letterType, UpdateLetterTemplateRequest request);
+
+    Task<LetterTemplateDto> ResetLetterTemplateAsync(string letterType);
+
+    Task<List<AdminEstateDto>> GetRetentionCandidatesAsync();
+
+    Task<string> PurgeEstateAsync(Guid estateId);
 }
+
+// A generated letter saved locally, and whether a copy was filed on the estate.
+public record GeneratedLetterFile(string Path, bool FiledOnEstate);

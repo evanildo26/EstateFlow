@@ -25,4 +25,6 @@ public class Estate
     public ICollection<ProgressStage> ProgressStages { get; set; } = new List<ProgressStage>();
     public ICollection<ScannedDocument> ScannedDocuments { get; set; } = new List<ScannedDocument>();
     public ICollection<AutomatedReport> AutomatedReports { get; set; } = new List<AutomatedReport>();
+    public ICollection<EstateMilestone> Milestones { get; set; } = new List<EstateMilestone>();
+    public ICollection<CorrespondenceRecord> Correspondence { get; set; } = new List<CorrespondenceRecord>();
 }

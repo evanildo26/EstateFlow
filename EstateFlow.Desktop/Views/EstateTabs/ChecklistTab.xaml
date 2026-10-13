@@ -1,0 +1,145 @@
+<UserControl x:Class="EstateFlow.Desktop.Views.EstateTabs.ChecklistTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: EstateDetailViewModel (inherited from EstateDetailView). -->
+
+    <ScrollViewer Padding="20" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+
+            <!-- SUMMARY -->
+            <Border Style="{StaticResource SectionCardBorderStyle}" Background="#FBFAF8">
+                <StackPanel>
+                    <TextBlock Text="MASTER'S PROCESS" Style="{StaticResource SectionTitleStyle}"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ProgressBar Grid.Column="0"
+                                     Height="8"
+                                     Minimum="0" Maximum="100"
+                                     Value="{Binding Estate.Progress.PercentComplete, Mode=OneWay}"
+                                     Foreground="#3F5B45" Background="#ECEAE5" BorderThickness="0"
+                                     VerticalAlignment="Center"
+                                     AutomationProperties.Name="Estate progress"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Margin="12,0,0,0"
+                                   FontFamily="{StaticResource MonoFont}" FontSize="12" Foreground="#16181C">
+                            <Run Text="{Binding Estate.Progress.CompletedCount, Mode=OneWay}"/><Run Text=" of "/><Run Text="{Binding Estate.Progress.TotalCount, Mode=OneWay}"/><Run Text=" stages"/>
+                        </TextBlock>
+                    </Grid>
+
+                    <TextBlock Text="{Binding Estate.Progress.NextMilestoneTitle, StringFormat='Next: {0}'}"
+                               FontFamily="{StaticResource SerifFont}" FontSize="15" Foreground="#16181C"
+                               Margin="0,12,0,0"
+                               Visibility="{Binding Estate.Progress.NextMilestoneTitle, Converter={StaticResource StringToVisConverter}}"/>
+
+                    <TextBlock Text="{Binding EarliestAccountLodgingText}"
+                               FontFamily="{StaticResource SansFont}" FontSize="12" Foreground="#9C7A3C"
+                               TextWrapping="Wrap" Margin="0,6,0,0"
+                               Visibility="{Binding EarliestAccountLodgingText, Converter={StaticResource StringToVisConverter}}"/>
+
+                    <TextBlock Text="Deadlines follow the Administration of Estates Act where marked statutory; others are the firm's follow-up periods. Record each stage with the date it actually happened."
+                               FontFamily="{StaticResource SansFont}" FontSize="11" Foreground="#9CA0A8"
+                               TextWrapping="Wrap" Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- STAGES -->
+            <ItemsControl ItemsSource="{Binding Milestones}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="Card" Style="{StaticResource SectionCardBorderStyle}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock x:Name="Marker"
+                                           Grid.Column="0"
+                                           Text="{Binding Marker}"
+                                           FontSize="18" Foreground="#9CA0A8"
+                                           VerticalAlignment="Top"/>
+
+                                <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                                    <TextBlock Text="{Binding Title}"
+                                               FontFamily="{StaticResource SerifFont}" FontSize="15" Foreground="#16181C"/>
+                                    <TextBlock Text="{Binding Description}"
+                                               Style="{StaticResource FieldLabelStyle}" TextWrapping="Wrap" Margin="0,3,0,0"/>
+
+                                    <TextBlock x:Name="Status"
+                                               Text="{Binding StatusText}"
+                                               FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="#6B6E76"
+                                               Margin="0,8,0,0"/>
+                                    <TextBlock Text="{Binding DeadlineBasis}"
+                                               FontFamily="{StaticResource SansFont}" FontSize="10" Foreground="#9CA0A8"
+                                               TextWrapping="Wrap" Margin="0,2,0,0"
+                                               Visibility="{Binding IsOpen, Converter={StaticResource BoolToVisConverter}}"/>
+                                    <TextBlock Text="{Binding Notes, StringFormat='Note: {0}'}"
+                                               FontFamily="{StaticResource SansFont}" FontSize="11" Foreground="#6B6E76"
+                                               TextWrapping="Wrap" Margin="0,6,0,0"
+                                               Visibility="{Binding Notes, Converter={StaticResource StringToVisConverter}}"/>
+                                </StackPanel>
+
+                                <!-- Record / reopen -->
+                                <StackPanel Grid.Column="2" Width="190" VerticalAlignment="Top">
+                                    <StackPanel Visibility="{Binding IsOpen, Converter={StaticResource BoolToVisConverter}}">
+                                        <TextBlock Text="Completed on" Style="{StaticResource FieldLabelStyle}" FontSize="11"/>
+                                        <DatePicker SelectedDate="{Binding CompletedOnInput, Mode=TwoWay}"
+                                                    FontFamily="{StaticResource SansFont}" FontSize="12"
+                                                    Margin="0,2,0,6"
+                                                    AutomationProperties.Name="{Binding Title, StringFormat='Date completed: {0}'}"/>
+                                        <TextBox Text="{Binding NotesInput, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource QuickAddTextBox}"
+                                                 ToolTip="Optional note, e.g. Master's office or Gazette reference"
+                                                 AutomationProperties.Name="Note"/>
+                                        <Button Content="Mark complete"
+                                                Style="{StaticResource AccentButtonStyle}"
+                                                Command="{Binding DataContext.CompleteMilestoneCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"/>
+                                    </StackPanel>
+
+                                    <Button Content="Reopen"
+                                            Style="{StaticResource RemoveLinkButtonStyle}"
+                                            HorizontalAlignment="Right"
+                                            Command="{Binding DataContext.ReopenMilestoneCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
+                                            Visibility="{Binding IsComplete, Converter={StaticResource BoolToVisConverter}}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding State}" Value="Complete">
+                                <Setter TargetName="Marker" Property="Foreground" Value="#3F5B45"/>
+                                <Setter TargetName="Status" Property="Foreground" Value="#3F5B45"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Next">
+                                <Setter TargetName="Marker" Property="Foreground" Value="#6E2A2A"/>
+                                <Setter TargetName="Card" Property="BorderBrush" Value="#C9B9B0"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="DueSoon">
+                                <Setter TargetName="Marker" Property="Foreground" Value="#9C7A3C"/>
+                                <Setter TargetName="Status" Property="Foreground" Value="#9C7A3C"/>
+                                <Setter TargetName="Card" Property="BorderBrush" Value="#D9C7A0"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Overdue">
+                                <Setter TargetName="Marker" Property="Foreground" Value="#8B3A3A"/>
+                                <Setter TargetName="Status" Property="Foreground" Value="#8B3A3A"/>
+                                <Setter TargetName="Status" Property="FontWeight" Value="SemiBold"/>
+                                <Setter TargetName="Card" Property="BorderBrush" Value="#E2C6C6"/>
+                                <Setter TargetName="Card" Property="Background" Value="#FCF6F6"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

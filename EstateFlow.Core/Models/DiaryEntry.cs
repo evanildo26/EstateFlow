@@ -1,4 +1,5 @@
-﻿namespace EstateFlow.Core.Models;
+using EstateFlow.Core.Workflow;
+namespace EstateFlow.Core.Models;
 
 public class DiaryEntry
 {
@@ -9,5 +10,5 @@ public class DiaryEntry
     public DateTime DueDate { get; set; }
     public string Note { get; set; } = string.Empty;
     public bool IsCompleted { get; set; }
-    public string NotifyBy { get; set; } = "Email"; // enum-like: Email, InApp, Both
+    public NotifyMethod NotifyBy { get; set; } = NotifyMethod.Email;
 }

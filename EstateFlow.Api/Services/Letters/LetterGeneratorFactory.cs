@@ -1,5 +1,3 @@
-﻿using EstateFlow.Core.Models;
-
 namespace EstateFlow.Api.Services.Letters;
 
 // Factory Method pattern — picks the correct IDocumentGenerator based on
@@ -11,8 +9,8 @@ public class LetterGeneratorFactory
     {
         return letterType switch
         {
-            "Vehicle" => new TrafficDeptLetterGenerator(),
-            "FinancialClaim" => new InstitutionLetterGenerator(),
+            "Vehicle" or LetterTypes.VehicleTransfer => new TrafficDeptLetterGenerator(),
+            "FinancialClaim" or LetterTypes.InstitutionNotification => new InstitutionLetterGenerator(),
             _ => throw new NotSupportedException($"No letter generator registered for type '{letterType}'.")
         };
     }

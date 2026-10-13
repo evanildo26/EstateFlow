@@ -135,4 +135,30 @@ public interface IEstateService
     Task DeleteFinancialClaimAsync(
         Guid estateId,
         Guid claimId);
+
+    // ─────────────────────────────────────────────
+    // Liability
+    // ─────────────────────────────────────────────
+
+    Task<Guid> AddLiabilityAsync(
+        Guid estateId,
+        CreateLiabilityRequest request);
+
+    Task DeleteLiabilityAsync(
+        Guid estateId,
+        Guid liabilityId);
+
+    // ─────────────────────────────────────────────
+    // Stage checklist
+    // ─────────────────────────────────────────────
+
+    Task<EstateProgressDto> CompleteMilestoneAsync(
+        Guid estateId,
+        string stage,
+        CompleteMilestoneRequest request,
+        string recordedBy);
+
+    Task<EstateProgressDto> ReopenMilestoneAsync(
+        Guid estateId,
+        string stage);
 }

@@ -1,4 +1,5 @@
-﻿namespace EstateFlow.Core.Models;
+using EstateFlow.Core.Workflow;
+namespace EstateFlow.Core.Models;
 
 public class ProgressStage
 {
@@ -8,5 +9,5 @@ public class ProgressStage
 
     public string StageName { get; set; } = string.Empty; // e.g. "Assets & Liabilities Captured"
     public DateTime? TargetDate { get; set; }
-    public string Status { get; set; } = "Pending"; // Pending | InProgress | Complete
+    public ProgressStatus Status { get; set; } = ProgressStatus.Pending;
 }

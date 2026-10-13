@@ -23,6 +23,10 @@ public interface IEstateRepository
     Task<bool> ExistsAsync(
         Guid estateId);
 
+    Task<bool> IsAssignedToControllerAsync(
+        Guid estateId,
+        Guid controllerId);
+
     // Explicit child inserts
     Task AddExecutorAsync(Executor executor);
 
@@ -43,4 +47,13 @@ public interface IEstateRepository
 
     Task AddProgressStageAsync(
         ProgressStage progressStage);
+
+    Task AddLiabilityAsync(
+        Liability liability);
+
+    Task AddMilestoneAsync(
+        EstateMilestone milestone);
+
+    Task AddAutomatedReportAsync(
+        AutomatedReport report);
 }

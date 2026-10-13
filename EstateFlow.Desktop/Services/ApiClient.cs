@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace EstateFlow.Desktop.Services;
 
-public class ApiClient : IApiClient
+public partial class ApiClient : IApiClient
 {
     private readonly HttpClient _httpClient;
 
@@ -35,19 +35,21 @@ public class ApiClient : IApiClient
                 "api/auth/login",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
 
         return (await response.Content
             .ReadFromJsonAsync<LoginResponse>())!;
     }
 
     public async Task<LoginResponse> VerifyTwoFactorAsync(
-        string email,
+        string twoFactorToken,
         string code)
     {
         var request = new VerifyTwoFactorRequest
         {
-            Email = email,
+            TwoFactorToken = twoFactorToken,
             Code = code
         };
 
@@ -56,7 +58,9 @@ public class ApiClient : IApiClient
                 "api/auth/login/verify-2fa",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
 
         return (await response.Content
             .ReadFromJsonAsync<LoginResponse>())!;
@@ -100,7 +104,9 @@ public class ApiClient : IApiClient
                 "api/estates",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
 
         var result =
             await response.Content
@@ -118,7 +124,9 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task DeleteEstateAsync(
@@ -128,7 +136,9 @@ public class ApiClient : IApiClient
             await _httpClient.DeleteAsync(
                 $"api/estates/{estateId}");
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     // ─────────────────────────────────────────────
@@ -144,7 +154,9 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/progress-stages",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task UpdateProgressStageAsync(
@@ -156,7 +168,9 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/progress-stage",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task DeleteProgressStageAsync(
@@ -167,7 +181,9 @@ public class ApiClient : IApiClient
             await _httpClient.DeleteAsync(
                 $"api/estates/{estateId}/progress-stages/{stageId}");
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     // ─────────────────────────────────────────────
@@ -195,7 +211,9 @@ public class ApiClient : IApiClient
                 $"api/diary/estate/{estateId}",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task UpdateDiaryEntryStatusAsync(
@@ -214,7 +232,9 @@ public class ApiClient : IApiClient
                 $"api/diary/estate/{estateId}/{diaryId}/status",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task DeleteDiaryEntryAsync(
@@ -225,7 +245,9 @@ public class ApiClient : IApiClient
             await _httpClient.DeleteAsync(
                 $"api/diary/estate/{estateId}/{diaryId}");
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task SendDiaryEmailAsync(
@@ -274,7 +296,9 @@ public class ApiClient : IApiClient
                 $"api/reports/settings/{estateId}",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     // ─────────────────────────────────────────────
@@ -290,7 +314,9 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/executors",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task DeleteExecutorAsync(
@@ -301,7 +327,9 @@ public class ApiClient : IApiClient
             await _httpClient.DeleteAsync(
                 $"api/estates/{estateId}/executors/{executorId}");
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     // ─────────────────────────────────────────────
@@ -317,7 +345,9 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/beneficiaries",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task DeleteBeneficiaryAsync(
@@ -328,7 +358,9 @@ public class ApiClient : IApiClient
             await _httpClient.DeleteAsync(
                 $"api/estates/{estateId}/beneficiaries/{beneficiaryId}");
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     // ─────────────────────────────────────────────
@@ -344,7 +376,9 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/movable-assets",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task DeleteMovableAssetAsync(
@@ -355,7 +389,9 @@ public class ApiClient : IApiClient
             await _httpClient.DeleteAsync(
                 $"api/estates/{estateId}/movable-assets/{assetId}");
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     // ─────────────────────────────────────────────
@@ -371,7 +407,9 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/immovable-properties",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task DeleteImmovablePropertyAsync(
@@ -382,7 +420,9 @@ public class ApiClient : IApiClient
             await _httpClient.DeleteAsync(
                 $"api/estates/{estateId}/immovable-properties/{assetId}");
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     // ─────────────────────────────────────────────
@@ -398,7 +438,9 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/financial-claims",
                 request);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     public async Task DeleteFinancialClaimAsync(
@@ -409,14 +451,16 @@ public class ApiClient : IApiClient
             await _httpClient.DeleteAsync(
                 $"api/estates/{estateId}/financial-claims/{claimId}");
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessWithApiMessageAsync(
+            response,
+            "The request could not be completed");
     }
 
     // ─────────────────────────────────────────────
     // Letters
     // ─────────────────────────────────────────────
 
-    public async Task<string> GenerateVehicleLetterToTempFileAsync(
+    public async Task<GeneratedLetterFile> GenerateVehicleLetterToTempFileAsync(
         Guid estateId,
         Guid assetId)
     {
@@ -425,14 +469,16 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/letters/vehicle/{assetId}",
                 null);
 
-        response.EnsureSuccessStatusCode();
-
-        return await SaveResponseToTempFileAsync(
+        await EnsureSuccessWithApiMessageAsync(
             response,
-            $"Vehicle_Letter_{assetId}.txt");
+            "The request could not be completed");
+
+        return await SaveLetterAsync(
+            response,
+            $"Vehicle_Letter_{assetId}.docx");
     }
 
-    public async Task<string> GenerateInstitutionLetterToTempFileAsync(
+    public async Task<GeneratedLetterFile> GenerateInstitutionLetterToTempFileAsync(
         Guid estateId,
         Guid claimId)
     {
@@ -441,11 +487,13 @@ public class ApiClient : IApiClient
                 $"api/estates/{estateId}/letters/institution/{claimId}",
                 null);
 
-        response.EnsureSuccessStatusCode();
-
-        return await SaveResponseToTempFileAsync(
+        await EnsureSuccessWithApiMessageAsync(
             response,
-            $"Institution_Letter_{claimId}.txt");
+            "The request could not be completed");
+
+        return await SaveLetterAsync(
+            response,
+            $"Institution_Letter_{claimId}.docx");
     }
 
     // ─────────────────────────────────────────────
@@ -513,9 +561,7 @@ public class ApiClient : IApiClient
                 : suggestedFileName;
 
         var tempPath =
-            Path.Combine(
-                Path.GetTempPath(),
-                safeFileName);
+            TempFiles.PathFor(safeFileName);
 
         await using (var fileStream =
                      File.Create(tempPath))
@@ -582,7 +628,24 @@ public class ApiClient : IApiClient
                 $"Server returned {(int)response.StatusCode} ({response.StatusCode}).";
         }
 
-        throw new HttpRequestException(message);
+        // Keep the status code: callers (e.g. sign-in) react to 401/423/429.
+        throw new HttpRequestException(message, null, response.StatusCode);
+    }
+
+    private static async Task<GeneratedLetterFile> SaveLetterAsync(
+        HttpResponseMessage response,
+        string fallbackFileName)
+    {
+        var path =
+            await SaveResponseToTempFileAsync(
+                response,
+                fallbackFileName);
+
+        var filed =
+            response.Headers.TryGetValues("X-EstateFlow-Letter-Filed", out var values) &&
+            values.FirstOrDefault() == "true";
+
+        return new GeneratedLetterFile(path, filed);
     }
 
     private static async Task<string> SaveResponseToTempFileAsync(
@@ -604,9 +667,7 @@ public class ApiClient : IApiClient
             fileName = fallbackFileName;
 
         var tempPath =
-            Path.Combine(
-                Path.GetTempPath(),
-                fileName);
+            TempFiles.PathFor(fileName);
 
         await using var fileStream =
             File.Create(tempPath);

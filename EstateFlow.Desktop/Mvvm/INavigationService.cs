@@ -1,4 +1,4 @@
-﻿namespace EstateFlow.Desktop.Mvvm;
+namespace EstateFlow.Desktop.Mvvm;
 
 public interface INavigationService
 {
@@ -10,4 +10,7 @@ public interface INavigationService
     void NavigateToDocumentScan();
     void NavigateToNewEstate();
     void NavigateToEditEstate(Guid estateId);
+    void NavigateToAdmin();
+    void NavigateToSecurity();
+    void SignOut();
 }

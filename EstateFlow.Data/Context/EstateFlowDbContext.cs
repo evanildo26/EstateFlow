@@ -1,13 +1,33 @@
-﻿using EstateFlow.Core.Models;
+using EstateFlow.Core.Models;
+using EstateFlow.Core.Workflow;
+using EstateFlow.Data.Security;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EstateFlow.Data.Context;
 
 public class EstateFlowDbContext : IdentityDbContext<ApplicationUser>
 {
+    private readonly IFieldProtector? _fieldProtector;
+
     public EstateFlowDbContext(DbContextOptions<EstateFlowDbContext> options)
         : base(options) { }
+
+    // Used when DataProtection:FieldKey is configured: ID numbers and account
+    // references are then encrypted at rest.
+    public EstateFlowDbContext(
+        DbContextOptions<EstateFlowDbContext> options,
+        IFieldProtector? fieldProtector)
+        : base(options)
+    {
+        _fieldProtector = fieldProtector;
+    }
+
+    // The EF model embeds the encryption converters, so a context with a
+    // different key (or none) needs its own cached model.
+    internal string FieldProtectorKeyId => _fieldProtector?.KeyId ?? "none";
 
     public DbSet<Estate> Estates => Set<Estate>();
     public DbSet<EstateController> Controllers => Set<EstateController>();
@@ -22,6 +42,15 @@ public class EstateFlowDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ProgressStage> ProgressStages => Set<ProgressStage>();
     public DbSet<ScannedDocument> ScannedDocuments => Set<ScannedDocument>();
     public DbSet<AutomatedReport> AutomatedReports => Set<AutomatedReport>();
+    public DbSet<EstateMilestone> Milestones => Set<EstateMilestone>();
+    public DbSet<CorrespondenceRecord> Correspondence => Set<CorrespondenceRecord>();
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<LetterTemplate> LetterTemplates => Set<LetterTemplate>();
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ReplaceService<IModelCacheKeyFactory, FieldProtectorModelCacheKeyFactory>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,6 +72,10 @@ public class EstateFlowDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<ProgressStage>().HasKey(e => e.StageId);
         modelBuilder.Entity<ScannedDocument>().HasKey(e => e.DocumentId);
         modelBuilder.Entity<AutomatedReport>().HasKey(e => e.ReportId);
+        modelBuilder.Entity<EstateMilestone>().HasKey(e => e.MilestoneId);
+        modelBuilder.Entity<CorrespondenceRecord>().HasKey(e => e.CorrespondenceId);
+        modelBuilder.Entity<AuditEntry>().HasKey(e => e.AuditEntryId);
+        modelBuilder.Entity<LetterTemplate>().HasKey(e => e.LetterType);
 
         // Relationships
         modelBuilder.Entity<Estate>()
@@ -96,6 +129,63 @@ public class EstateFlowDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(x => x.Estate).WithMany(e => e.AutomatedReports)
             .HasForeignKey(x => x.EstateId).OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<EstateMilestone>()
+            .HasOne(x => x.Estate).WithMany(e => e.Milestones)
+            .HasForeignKey(x => x.EstateId).OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EstateMilestone>()
+            .HasIndex(x => new { x.EstateId, x.Stage })
+            .IsUnique();
+
+        modelBuilder.Entity<CorrespondenceRecord>()
+            .HasOne(x => x.Estate).WithMany(e => e.Correspondence)
+            .HasForeignKey(x => x.EstateId).OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CorrespondenceRecord>()
+            .HasIndex(x => new { x.EstateId, x.SentAtUtc });
+
+        // Audit entries are kept even if the estate is later deleted, so no FK.
+        modelBuilder.Entity<AuditEntry>()
+            .HasIndex(x => new { x.EstateId, x.TimestampUtc });
+
+        modelBuilder.Entity<AuditEntry>()
+            .HasIndex(x => x.TimestampUtc);
+
+        // Short, indexable string columns for the new tables.
+        modelBuilder.Entity<EstateMilestone>().Property(x => x.Stage)
+            .HasConversion<string>().HasMaxLength(40);
+        modelBuilder.Entity<CorrespondenceRecord>().Property(x => x.Channel).HasMaxLength(20);
+        modelBuilder.Entity<CorrespondenceRecord>().Property(x => x.Status).HasMaxLength(20);
+        modelBuilder.Entity<AuditEntry>().Property(x => x.Action).HasMaxLength(20);
+        modelBuilder.Entity<LetterTemplate>().Property(x => x.LetterType).HasMaxLength(50);
+
+        // Statuses are enums in code but stay as the same text in the
+        // database. Unknown legacy values fall back to a default instead of
+        // breaking the whole estate load.
+        modelBuilder.Entity<DiaryEntry>().Property(x => x.NotifyBy)
+            .HasConversion(new ValueConverter<NotifyMethod, string>(
+                v => v.ToString(),
+                v => ParseNotifyMethod(v)));
+
+        modelBuilder.Entity<ProgressStage>().Property(x => x.Status)
+            .HasConversion(new ValueConverter<ProgressStatus, string>(
+                v => v.ToString(),
+                v => ParseProgressStatus(v)));
+
+        // Encryption at rest for personal identifiers (POPIA).
+        if (_fieldProtector is not null)
+        {
+            var protector = _fieldProtector;
+            var encrypted = new ValueConverter<string, string>(
+                v => protector.Protect(v),
+                v => protector.Unprotect(v));
+
+            modelBuilder.Entity<Deceased>().Property(x => x.IdNumber).HasConversion(encrypted);
+            modelBuilder.Entity<Executor>().Property(x => x.IdNumber).HasConversion(encrypted);
+            modelBuilder.Entity<Beneficiary>().Property(x => x.IdNumber).HasConversion(encrypted);
+            modelBuilder.Entity<FinancialClaim>().Property(x => x.AccountReference).HasConversion(encrypted);
+        }
+
         // Precision for all decimal (money) fields
         foreach (var prop in modelBuilder.Model.GetEntityTypes()
                      .SelectMany(t => t.GetProperties())
@@ -104,4 +194,18 @@ public class EstateFlowDbContext : IdentityDbContext<ApplicationUser>
             prop.SetColumnType("decimal(18,2)");
         }
     }
+
+    private static NotifyMethod ParseNotifyMethod(string value) =>
+        StatusParsing.TryParseNotifyMethod(value, out var method) ? method : NotifyMethod.Email;
+
+    private static ProgressStatus ParseProgressStatus(string value) =>
+        StatusParsing.TryParseProgressStatus(value, out var status) ? status : ProgressStatus.Pending;
+}
+
+internal sealed class FieldProtectorModelCacheKeyFactory : IModelCacheKeyFactory
+{
+    public object Create(DbContext context, bool designTime) =>
+        context is EstateFlowDbContext estateContext
+            ? (context.GetType(), estateContext.FieldProtectorKeyId, designTime)
+            : (object)(context.GetType(), designTime);
 }

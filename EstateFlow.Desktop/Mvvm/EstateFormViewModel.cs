@@ -1,5 +1,7 @@
 ﻿using System.Windows.Input;
 using EstateFlow.Core.Dtos;
+using EstateFlow.Core.Validation;
+using EstateFlow.Core.Workflow;
 using EstateFlow.Desktop.Services;
 
 namespace EstateFlow.Desktop.Mvvm;
@@ -29,7 +31,11 @@ public class EstateFormViewModel : BaseViewModel
     public DateTime DateOfDeath
     {
         get => _dateOfDeath;
-        set => SetProperty(ref _dateOfDeath, value);
+        set
+        {
+            if (SetProperty(ref _dateOfDeath, value))
+                OnPropertyChanged(nameof(DeceasedIdHint));
+        }
     }
 
     private bool _isDutiable;
@@ -57,8 +63,30 @@ public class EstateFormViewModel : BaseViewModel
     public string DeceasedIdNumber
     {
         get => _deceasedIdNumber;
-        set => SetProperty(ref _deceasedIdNumber, value);
+        set
+        {
+            if (SetProperty(ref _deceasedIdNumber, value))
+                OnPropertyChanged(nameof(DeceasedIdHint));
+        }
     }
+
+    // Live check so a typo is caught before it reaches a letter to a bank.
+    public string DeceasedIdHint
+    {
+        get
+        {
+            var check = SouthAfricanIdNumber.Check(DeceasedIdNumber);
+
+            if (!check.IsAcceptable)
+                return check.Error!;
+
+            return check.DateOfBirth is DateTime born && born >= DateOfDeath.Date
+                ? "The date of birth in this ID number is on or after the date of death."
+                : string.Empty;
+        }
+    }
+
+    public IReadOnlyList<string> StatusOptions { get; } = EstateStatuses.All;
 
     private string _deceasedMaritalStatus = string.Empty;
     public string DeceasedMaritalStatus
@@ -126,7 +154,7 @@ public class EstateFormViewModel : BaseViewModel
         MastersReference = estate.MastersReference ?? string.Empty;
         DateOfDeath = estate.DateOfDeath;
         IsDutiable = estate.IsDutiable;
-        EstateStatus = estate.EstateStatus;
+        EstateStatus = EstateStatuses.Normalize(estate.EstateStatus);
         DeceasedFullName = estate.Deceased?.FullName ?? string.Empty;
         DeceasedIdNumber = estate.Deceased?.IdNumber ?? string.Empty;
         DeceasedMaritalStatus = estate.Deceased?.MaritalStatus ?? string.Empty;
@@ -138,6 +166,12 @@ public class EstateFormViewModel : BaseViewModel
         if (string.IsNullOrWhiteSpace(FileNumber) || string.IsNullOrWhiteSpace(DeceasedFullName))
         {
             StatusMessage = "File number and deceased full name are required.";
+            return;
+        }
+
+        if (DeceasedIdHint.Length > 0)
+        {
+            StatusMessage = $"Deceased ID number: {DeceasedIdHint}";
             return;
         }
 

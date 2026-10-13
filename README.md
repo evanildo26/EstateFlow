@@ -41,15 +41,53 @@
 - Store deceased details, estate file numbers and administration information.
 - Display the estate's latest progress directly on the overview screen.
 
+###  Dashboard
+
+- Search by deceased name, file number or status.
+- Filter: active estates (default), needs attention, by status, or all.
+- Sort by **most urgent** (missed deadlines first), file number, name, least progress or date of death.
+- Each row shows progress, the next deadline and overdue diary items; a red dot marks estates needing attention.
+- **Overdue / Due this week** panel: every open diary entry due within 7 days. Diary entries set to
+  "Dashboard only" (InApp) appear here instead of by email.
+
+###  Master's Process Checklist & Deadlines
+
+The **Checklist** tab follows the Administration of Estates Act process:
+
+```text
+Reported to the Master → Letters of Executorship → Advertised for creditors →
+L&D account lodged → Inspection period completed → Paid out → Finalised
+```
+
+- Record each stage with the date it happened (and an optional note).
+- Progress percentage, next step and estate status follow the checklist automatically.
+- Deadlines are worked out per stage, e.g. report within 14 days of death (s7/s9), account within
+  6 months of Letters (s35(1)), not before the 30-day creditor claim period ends (s29).
+- Estates with a missed deadline, or no progress for 90 days, are flagged on the dashboard.
+
+> [!IMPORTANT]
+> The statutory periods are taken from the Act; the follow-up periods (e.g. "chase the Master
+> after 60 days") are firm practice. **Confirm every period with the firm.** They can be changed
+> without code via the `Workflow__*` settings (see `MasterProcessOptions.cs`).
+
 ###  Executors & Beneficiaries
 
 - Add Executors and Beneficiaries to an estate.
 - Store email addresses for correspondence.
 - Use recipient email details for automated reports and manual communication.
+- **South African ID numbers are checked** as you type (13 digits, valid date of birth, citizenship
+  digit, Luhn check digit), so a typo never reaches a letter. Values with letters are treated as
+  passport numbers. The deceased's date of birth must be before the date of death.
+- **Invite to portal**: emails an executor or heir a link to the read-only progress portal.
 
-###  Progress Tracking
+###  Liabilities
 
-EstateFlow uses a flexible timeline rather than limiting progress to fixed Master's Office stages.
+- Record the deceased's debts (creditor, description, amount).
+- The Liabilities tab shows total assets, total liabilities and the net estate value.
+
+###  Progress Timeline
+
+Alongside the formal checklist, the **Timeline** tab keeps free-text progress updates.
 
 Examples of progress entries:
 
@@ -95,32 +133,62 @@ Diary correspondence is sent through the Azure-hosted backend using **Azure Func
 - Delete documents.
 - Automatically generate document names.
 
-###  Vehicle / Traffic Department Letters
+###  Letters (vehicle transfer, notification of death)
 
-- Capture vehicle information under movable assets.
-- Generate Traffic Department-related estate correspondence.
-- Support the vehicle-transfer workflow for deceased estates.
+- One click from a vehicle (Movable tab) or a bank/insurance claim (Claims tab).
+- Produced as an editable **Word document on the firm's letterhead** (firm name, contact details,
+  date, our reference, Master's reference, addressee, signature block).
+- A copy is **filed automatically** under the estate's Documents and recorded in Correspondence.
+- A Firm Administrator can change the **wording** (Administration → Letter wording) using fields
+  such as `{DeceasedName}`, `{FileNumber}`, `{RegistrationNumber}`.
 
-###  Financial Institution Letters
+###  Correspondence History
 
-- Capture financial institution / claim information.
-- Generate letters using estate and institution data.
-- Support correspondence with banks, insurers and other institutions.
+The **Correspondence** tab lists everything sent from EstateFlow for the estate — diary emails,
+letters, monthly reports and portal invitations — with who sent it, to whom, when, and whether it
+was delivered. Generated letters can be reopened from here.
 
 ###  Monthly Estate Reports
 
-- Automated monthly estate updates.
-- Reports can be sent to Executors and Beneficiaries.
-- Azure Functions perform the scheduled processing.
-- SendGrid handles email delivery.
-- Report settings are managed per estate.
+- Sent on the 1st of each month to executors and heirs with an email address.
+- **HTML email** on the letterhead: progress bar, stage checklist, next step, the last month's
+  updates, and the controller's contact details (plain-text version included).
+- **Finalised estates are skipped**, and each estate is sent at most once per month (safe re-runs).
+- Can be paused per estate; every report is recorded in the correspondence history.
+
+###  Executor / Heir Portal
+
+- A read-only web page at `https://<api-host>/portal/` where executors and heirs see the stage
+  checklist, progress and recent updates for their estate(s) — not ID numbers, values or documents.
+- Access is by invitation only (Executors / Heirs tab → **Invite to portal**). The emailed link lets
+  them choose a password; it expires after 24 hours and works once.
+- Aims to cut down "when do I get paid?" calls.
+
+###  Firm Administration (Firm Administrators only)
+
+- **Staff:** create accounts (with a generated temporary password), reset passwords, unlock,
+  deactivate (signs them out immediately), reset two-factor authentication for a lost phone.
+- **Estates:** reassign one estate, or move all of a departing controller's estates at once.
+- **Audit log:** who viewed or changed which estate, and when (including refused attempts).
+- **Letter wording** and **Retention** review (see POPIA below).
+
+###  Data Protection (POPIA)
+
+- **Audit trail** of every view and change, kept even if an estate is later deleted.
+- **Encryption at rest** of ID numbers and bank/policy references (AES-256-GCM) when
+  `DataProtection__FieldKey` is set. Existing rows are encrypted automatically on start-up.
+- **Retention review:** estates finalised more than `Retention__FinalisedEstateYears` (default 5)
+  years ago are listed for an administrator to purge. Nothing is deleted automatically.
+- Email addresses are masked in Azure logs; error details never reach the client.
+- Documents opened on a workstation go to `%TEMP%\EstateFlow` and are deleted on sign-out and exit.
 
 ### Authentication & Security
 
-- User registration and login.
+- Staff accounts created by a Firm Administrator (no open sign-up).
+- Login with account lockout and rate limiting.
 - JWT authentication.
 - Two-factor authentication support.
-- User-specific estate isolation.
+- User-specific estate isolation, enforced on every estate endpoint.
 - Production secrets are stored in Azure configuration instead of GitHub.
 
 ---
@@ -313,16 +381,22 @@ Save
 
 | Section | Purpose |
 |---|---|
-| **General** | Key estate information + current progress |
-| **Executors** | Executor records and email details |
-| **Beneficiaries** | Beneficiary/heir records and email details |
-| **Movable Assets** | Vehicles and movable estate assets |
-| **Immovable Properties** | Property information |
-| **Financial Claims** | Banks, policies and institution claims |
-| **Progress** | Flexible estate-administration timeline |
-| **Diary** | Notes, follow-ups and email correspondence |
-| **Documents** | Upload/manage estate documents |
-| **Letters** | Generate estate correspondence |
+| **General** | Key estate information, current progress, estate actions |
+| **Checklist** | Master's-process stages with dates and deadlines |
+| **Deceased** | Particulars of the deceased |
+| **Executors** | Executor records, email details, portal invitation |
+| **Heirs** | Beneficiary/heir records, email details, portal invitation |
+| **Movable** | Vehicles and movable assets; vehicle-transfer letters |
+| **Immovable** | Property information |
+| **Claims** | Banks, policies and institution claims; notification letters |
+| **Liabilities** | Debts of the deceased; assets, liabilities and net value |
+| **Diary** | Notes and follow-ups with due dates and reminders |
+| **Timeline** | Free-text progress updates |
+| **Correspondence** | Every email and letter sent for the estate |
+
+Documents are managed from **Documents** in the sidebar (for the estate opened last).
+Each tab is its own file in `EstateFlow.Desktop/Views/EstateTabs`, with the matching
+view-model code in `Mvvm/EstateDetailViewModel.<Area>.cs`.
 
 ---
 
@@ -421,15 +495,83 @@ Production connection strings
 
 The hosted application reads production configuration from Azure Environment Variables.
 
+### Deploying this version
+
+1. **Apply the database migration** `AddStageChecklistCorrespondenceAuditTemplates` before or with
+   the API deployment (it only adds tables, plus a one-off clean-up of broken status values):
+   see *Entity Framework Migrations* below.
+2. Set the new API settings below (at least `SendGrid__ApiKey` for portal invitations, and the
+   `Firm__*` letterhead details).
+3. Optional but recommended: set `DataProtection__FieldKey` on the API **and** the Function App.
+4. Publish the API, the Function App and the desktop app together.
+
 ### Main API App Service
 
-Typical settings:
+Required settings. The API refuses to start, with a clear message, if the first two are missing:
 
 ```text
+ConnectionStrings__EstateFlowDb   Azure SQL connection string
+Jwt__Key                          Random signing key, at least 32 bytes
 AzureStorage__ConnectionString
 AzureStorage__ContainerName
 DiaryEmailFunctionUrl
 ```
+
+Generate a JWT key with, for example:
+
+```powershell
+[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+```
+
+> [!WARNING]
+> Changing `Jwt__Key` signs everyone out. That is expected: they simply log in again.
+
+Optional settings:
+
+```text
+SendGrid__ApiKey                  Needed for portal invitation emails
+SendGrid__FromEmail               Verified sender (default noreply@estateflow.stbb.co.za)
+
+Firm__Name                        Letterhead (default "STBB Incorporated")
+Firm__Division                    (default "Deceased Estates Division")
+Firm__Address                     Separate lines with |   e.g. "1 Main Road|Cape Town|8001"
+Firm__Phone, Firm__Email, Firm__Website
+
+DataProtection__FieldKey          Encrypts ID numbers and account references at rest.
+                                  32 random bytes, base64 (same command as the JWT key, with 32).
+                                  KEEP A SAFE COPY: without it the encrypted values cannot be read.
+
+Workflow__ReportWithinDaysOfDeath, Workflow__AccountWithinMonthsOfLetters, ...
+                                  Checklist deadline periods (see MasterProcessOptions.cs)
+
+Retention__FinalisedEstateYears   Retention review period (default 5) — agree with the firm
+Portal__BaseUrl                   Public URL used in portal invitation links (default: the API host)
+```
+
+### Staff accounts & the first administrator
+
+Registration is restricted. Only a signed-in **Firm Administrator** can create
+staff accounts (`POST /api/auth/register`, roles `EstateController` or `FirmAdministrator`).
+
+To create the first administrator, add these App Service settings and restart the API:
+
+```text
+Bootstrap__AdminEmail       Promotes an existing account with this email,
+                            or creates a new one using the two settings below
+Bootstrap__AdminPassword    Only needed when creating a new account
+Bootstrap__AdminFullName    Only needed when creating a new account
+```
+
+This only runs while no Firm Administrator exists. **Remove the `Bootstrap__*` settings once it has run.**
+
+### Sign-in protection
+
+- 5 wrong passwords or 2FA codes lock an account for 15 minutes.
+- Sign-in endpoints are rate-limited per IP address.
+- With 2FA enabled, the authenticator code is only accepted together with the
+  short-lived token issued after a correct password.
+- Each Estate Controller can only reach estates assigned to them. Every
+  endpoint with an `{estateId}` is checked centrally (`EstateOwnershipFilter`).
 
 ### Function App
 
@@ -440,6 +582,9 @@ EstateFlowDb
 SendGridApiKey
 SendGridFromEmail
 AzureWebJobsStorage
+DataProtection__FieldKey   Same key as the API (if encryption is on)
+Firm__Name, Firm__Division  Letterhead on emails (defaults: STBB Incorporated)
+Workflow__*                Same deadline periods as the API
 ```
 
 ---
@@ -480,15 +625,39 @@ Local API development may require local values for:
 - JWT/authentication settings
 - Function URLs
 
-Recommended approaches:
+Use .NET User Secrets (stored outside the repository):
 
-```text
-appsettings.Development.json
-.NET User Secrets
-Environment variables
+```powershell
+cd EstateFlow.Api
+dotnet user-secrets set "ConnectionStrings:EstateFlowDb" "Server=tcp:..."
+dotnet user-secrets set "Jwt:Key" "<random value, at least 32 bytes>"
+dotnet user-secrets set "AzureStorage:ConnectionString" "..."
 ```
 
 Do not add real credentials to `appsettings.json`.
+
+---
+
+#  Running the Tests
+
+```powershell
+dotnet test
+```
+
+| Project | What it checks |
+|---|---|
+| `tests/EstateFlow.Api.Tests` | Starts the real API against an in-memory database: estate ownership, admin-only registration, lockout, two-factor sign-in, liabilities, the stage checklist, SA ID validation, Word letters and filing, correspondence, audit log, staff deactivation, estate reassignment, the portal invitation flow; plus unit tests for deadlines and ID numbers, and (with SQLite) that ID numbers are really encrypted in the database. |
+| `tests/EstateFlow.Desktop.Tests` | Loads every desktop screen with sample data and **fails on any broken XAML resource or binding** (e.g. a misspelt property), plus dashboard search/sort, the due panel, checklist rows and ID-number validation. |
+
+No Azure access or secrets are needed. GitHub Actions runs both on every push and
+pull request (`.github/workflows/ci.yml`).
+
+The desktop app's API address is in `EstateFlow.Desktop/appsettings.json`. To point a
+local build at a local API without editing it:
+
+```powershell
+setx ESTATEFLOW_Api__BaseUrl "https://localhost:7234/"
+```
 
 ---
 
@@ -519,6 +688,12 @@ If database models change, open **Package Manager Console** and set:
 
 ```text
 Default project: EstateFlow.Data
+```
+
+The design-time factory reads the connection string from an environment variable. Set it in the same console first:
+
+```powershell
+$env:ConnectionStrings__EstateFlowDb = "Server=tcp:..."
 ```
 
 Create a migration:
@@ -686,7 +861,8 @@ Monthly reporting
 Cloud-backed shared data
 ```
 
-A separate Executor/Heir web portal may be considered as a future enhancement.
+Executors and heirs have a read-only progress portal (see **Executor / Heir Portal**).
+Firm Administrators manage staff, assignments, letter wording, the audit log and retention in the desktop app.
 
 ---
 

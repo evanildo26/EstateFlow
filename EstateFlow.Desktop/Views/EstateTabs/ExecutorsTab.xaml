@@ -1,0 +1,149 @@
+<UserControl x:Class="EstateFlow.Desktop.Views.EstateTabs.ExecutorsTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: EstateDetailViewModel (inherited from EstateDetailView). -->
+
+    <ScrollViewer Padding="20">
+        <StackPanel MaxWidth="700"
+                    HorizontalAlignment="Left">
+
+            <Border Style="{StaticResource SectionCardBorderStyle}">
+                <StackPanel>
+
+                    <TextBlock Text="ADD EXECUTOR"
+                               Style="{StaticResource SectionTitleStyle}"/>
+
+                    <TextBlock Text="Full Name"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewExecutorFullName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Identity Number"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewExecutorIdNumber, UpdateSourceTrigger=PropertyChanged}"
+                             FontFamily="{StaticResource MonoFont}"
+                             ToolTip="13-digit SA ID number, or a passport number for foreign nationals"/>
+
+                    <TextBlock Text="{Binding NewExecutorIdHint}"
+                               Style="{StaticResource InputHintStyle}"
+                               Visibility="{Binding NewExecutorIdHint, Converter={StaticResource StringToVisConverter}}"/>
+
+                    <TextBlock Text="Email"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewExecutorEmail, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Role"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewExecutorRole, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <Button Content="+ Add Executor"
+                            Command="{Binding AddExecutorCommand}"
+                            Background="#6E2A2A"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Padding="14,7"
+                            FontFamily="{StaticResource SansFont}"
+                            FontSize="12"
+                            Cursor="Hand"
+                            HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <ItemsControl ItemsSource="{Binding Estate.Executors}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource SectionCardBorderStyle}">
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+
+                                    <TextBlock Text="{Binding FullName}"
+                                               FontFamily="{StaticResource SerifFont}"
+                                               FontSize="15"
+                                               Foreground="#16181C"
+                                               Margin="0,0,0,10"/>
+
+                                    <Grid Style="{StaticResource FieldRowGrid}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Identity Number"
+                                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding IdNumber}"
+                                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                                    </Grid>
+
+                                    <Grid Style="{StaticResource FieldRowGrid}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Email"
+                                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Email}"
+                                                   Style="{StaticResource FieldValueStyle}"/>
+                                    </Grid>
+
+                                    <Grid Style="{StaticResource FieldRowGrid}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Role"
+                                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Role}"
+                                                   Style="{StaticResource FieldValueStyle}"/>
+                                    </Grid>
+
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                                    <Button Content="Invite to portal"
+                                            Style="{StaticResource OutlineButtonStyle}"
+                                            ToolTip="Email this executor a link to follow the estate's progress online"
+                                            Command="{Binding DataContext.InviteExecutorToPortalCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding ExecutorId}"
+                                            Margin="0,0,0,8"/>
+
+                                    <Button Content="Remove"
+                                            Style="{StaticResource RemoveLinkButtonStyle}"
+                                            HorizontalAlignment="Right"
+                                            Command="{Binding DataContext.DeleteExecutorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding ExecutorId}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 
 namespace EstateFlow.Desktop.Services;
@@ -12,11 +13,25 @@ public class AuthTokenHandler : DelegatingHandler
         _authState = authState;
     }
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(_authState.Token))
+        var hadToken = !string.IsNullOrEmpty(_authState.Token);
+
+        if (hadToken)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authState.Token);
 
-        return base.SendAsync(request, cancellationToken);
+        var response = await base.SendAsync(request, cancellationToken);
+
+        // The token expired (after a working day) or the account was
+        // deactivated: send the user back to sign in rather than letting
+        // every screen fail with errors.
+        if (hadToken &&
+            response.StatusCode == HttpStatusCode.Unauthorized &&
+            request.RequestUri?.AbsolutePath.Contains("/api/auth/", StringComparison.OrdinalIgnoreCase) != true)
+        {
+            ErrorReporter.SessionExpired?.Invoke();
+        }
+
+        return response;
     }
 }

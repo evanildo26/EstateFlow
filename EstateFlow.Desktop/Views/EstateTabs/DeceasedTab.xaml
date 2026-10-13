@@ -1,0 +1,67 @@
+<UserControl x:Class="EstateFlow.Desktop.Views.EstateTabs.DeceasedTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: EstateDetailViewModel (inherited from EstateDetailView). -->
+
+    <ScrollViewer Padding="20">
+        <StackPanel MaxWidth="700"
+                    HorizontalAlignment="Left">
+
+            <Border Style="{StaticResource SectionCardBorderStyle}">
+                <StackPanel>
+
+                    <TextBlock Text="PARTICULARS OF THE DECEASED"
+                               Style="{StaticResource SectionTitleStyle}"/>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Full Names"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.Deceased.FullName}"
+                                   Style="{StaticResource FieldValueStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Identity Number"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.Deceased.IdNumber}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Marital Status"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.Deceased.MaritalStatus}"
+                                   Style="{StaticResource FieldValueStyle}"/>
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

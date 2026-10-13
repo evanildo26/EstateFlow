@@ -1,0 +1,287 @@
+<UserControl x:Class="EstateFlow.Desktop.Views.EstateTabs.GeneralTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: EstateDetailViewModel (inherited from EstateDetailView). -->
+
+    <ScrollViewer Padding="20">
+        <StackPanel MaxWidth="700"
+                    HorizontalAlignment="Left">
+
+            <Border Style="{StaticResource SectionCardBorderStyle}">
+                <StackPanel>
+
+                    <TextBlock Text="FILE REFERENCE"
+                               Style="{StaticResource SectionTitleStyle}"/>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="File Number"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.FileNumber}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Master's Reference"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.MastersReference}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Date of Death"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.DateOfDeath, StringFormat='dd MMMM yyyy'}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Dutiable Estate"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.IsDutiable}"
+                                   Style="{StaticResource FieldValueStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Status"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.EstateStatus}"
+                                   Style="{StaticResource FieldValueStyle}"/>
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardBorderStyle}"
+                    Margin="0,18,0,0"
+                    Background="#FBFAF8">
+                <StackPanel>
+                    <TextBlock Text="CURRENT PROGRESS"
+                               Style="{StaticResource SectionTitleStyle}"/>
+
+                    <TextBlock Text="{Binding CurrentProgressTitle}"
+                               FontFamily="{StaticResource SerifFont}"
+                               FontSize="19"
+                               Foreground="#16181C"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Border Background="#EFEAE4"
+                                CornerRadius="3"
+                                Padding="8,4"
+                                Margin="0,0,10,0">
+                            <TextBlock Text="{Binding CurrentProgressStatus}"
+                                       FontFamily="{StaticResource MonoFont}"
+                                       FontSize="10"
+                                       Foreground="#6E2A2A"/>
+                        </Border>
+
+                        <TextBlock Text="{Binding CurrentProgressSummary}"
+                                   FontFamily="{StaticResource MonoFont}"
+                                   FontSize="11"
+                                   Foreground="#6B6E76"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Record formal stages on the Checklist tab, and day-to-day updates on the Timeline tab."
+                               FontFamily="{StaticResource SansFont}"
+                               FontSize="11"
+                               Foreground="#9CA0A8"
+                               Margin="0,12,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardBorderStyle}"
+                    Margin="0,18,0,0">
+                <StackPanel>
+                    <TextBlock Text="ESTATE OVERVIEW"
+                               Style="{StaticResource SectionTitleStyle}"/>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Deceased"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.Deceased.FullName}"
+                                   Style="{StaticResource FieldValueStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Executors"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.Executors.Count}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Heirs / Beneficiaries"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.Beneficiaries.Count}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Movable Assets"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.MovableAssets.Count}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Immovable Properties"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.ImmovableProperties.Count}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Financial Claims"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.FinancialClaims.Count}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Diary Entries"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.DiaryEntries.Count}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Progress Stages"
+                                   Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Estate.ProgressStages.Count}"
+                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardBorderStyle}"
+                    Margin="0,18,0,0">
+                <StackPanel>
+                    <TextBlock Text="ESTATE ACTIONS"
+                               Style="{StaticResource SectionTitleStyle}"/>
+
+                    <TextBlock Text="Edit the estate details or permanently remove this estate."
+                               FontFamily="{StaticResource SansFont}"
+                               FontSize="12"
+                               Foreground="#6B6E76"
+                               Margin="0,0,0,14"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Edit Estate"
+                                Command="{Binding EditCommand}"
+                                Background="Transparent"
+                                BorderThickness="1"
+                                BorderBrush="#E4E2DD"
+                                Foreground="#16181C"
+                                FontFamily="{StaticResource SansFont}"
+                                FontSize="12"
+                                Padding="14,7"
+                                Cursor="Hand"
+                                Margin="0,0,10,0"/>
+
+                        <Button Content="Delete Estate"
+                                Command="{Binding DeleteEstateCommand}"
+                                Background="#8B3A3A"
+                                BorderThickness="0"
+                                Foreground="White"
+                                FontFamily="{StaticResource SansFont}"
+                                FontSize="12"
+                                Padding="14,7"
+                                Cursor="Hand"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

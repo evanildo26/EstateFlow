@@ -9,6 +9,11 @@ public class LoginRequest
 public class LoginResponse
 {
     public bool RequiresTwoFactor { get; set; }
+
+    // Short-lived proof that the password was correct. Only set when
+    // RequiresTwoFactor is true; send it back with the authenticator code.
+    public string? TwoFactorToken { get; set; }
+
     public string? Token { get; set; }
     public string? FullName { get; set; }
     public string? Role { get; set; }
@@ -16,7 +21,7 @@ public class LoginResponse
 
 public class VerifyTwoFactorRequest
 {
-    public string Email { get; set; } = string.Empty;
+    public string TwoFactorToken { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
 }
 

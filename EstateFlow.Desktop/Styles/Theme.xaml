@@ -329,6 +329,80 @@
     </Style>
 
 
+    <!-- Label/value row inside a section card -->
+
+    <Style x:Key="FieldRowGrid"
+           TargetType="Grid">
+        <Setter Property="Margin" Value="0,0,0,10"/>
+    </Style>
+
+
+    <!-- Text box on the light estate screens -->
+
+    <Style x:Key="QuickAddTextBox"
+           TargetType="TextBox">
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="FontFamily" Value="{StaticResource SansFont}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
+    </Style>
+
+
+    <!-- Small validation hint under an input (e.g. ID number check) -->
+
+    <Style x:Key="InputHintStyle"
+           TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource SansFont}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="#8B3A3A"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,-6,0,10"/>
+    </Style>
+
+
+    <!-- Solid accent button used on the light screens -->
+
+    <Style x:Key="AccentButtonStyle"
+           TargetType="Button">
+        <Setter Property="Background" Value="#6E2A2A"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="14,7"/>
+        <Setter Property="FontFamily" Value="{StaticResource SansFont}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+    </Style>
+
+
+    <!-- Outlined secondary button used on the light screens -->
+
+    <Style x:Key="OutlineButtonStyle"
+           TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="#16181C"/>
+        <Setter Property="BorderBrush" Value="#E4E2DD"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="FontFamily" Value="{StaticResource SansFont}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+
+    <!-- Text-only destructive action ("Remove") -->
+
+    <Style x:Key="RemoveLinkButtonStyle"
+           TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="#8B3A3A"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontFamily" Value="{StaticResource SansFont}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+
     <!-- IMPORTANT:
          ResourceDictionary closes HERE,
          after every style.
