@@ -5,7 +5,7 @@ namespace EstateFlow.Desktop.Services;
 public interface IApiClient
 {
     Task<LoginResponse> LoginAsync(string email, string password);
-    Task<LoginResponse> VerifyTwoFactorAsync(string email, string code);
+    Task<LoginResponse> VerifyTwoFactorAsync(string twoFactorToken, string code);
     Task<List<EstateSummaryDto>> GetEstatesAsync();
     Task<EstateDto?> GetEstateAsync(Guid estateId);
     Task UpdateProgressStageAsync(Guid estateId, UpdateProgressStageRequest request);

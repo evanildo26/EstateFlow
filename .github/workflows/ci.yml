@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-and-test:
+    # Windows because EstateFlow.Desktop is WPF.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore EstateFlow.sln
+
+      - name: Build
+        run: dotnet build EstateFlow.sln --configuration Release --no-restore
+
+      # The real API against an in-memory database (plus SQLite for the
+      # encryption check). No Azure secrets are needed.
+      - name: API tests
+        run: dotnet test tests/EstateFlow.Api.Tests --configuration Release --no-build --verbosity normal
+
+      # Loads every desktop screen with sample data and fails on any broken
+      # XAML resource or binding, plus dashboard / checklist / validation logic.
+      - name: Desktop tests
+        run: dotnet test tests/EstateFlow.Desktop.Tests --configuration Release --no-build --verbosity normal

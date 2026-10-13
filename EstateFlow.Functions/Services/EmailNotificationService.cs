@@ -23,10 +23,13 @@ public class EmailNotificationService
         _logger = logger;
     }
 
+    // htmlBody is optional; the plain-text body is always sent as well, for
+    // mail clients that block HTML.
     public async Task NotifyAsync(
         string recipientEmail,
         string subject,
-        string body)
+        string body,
+        string? htmlBody = null)
     {
         if (string.IsNullOrWhiteSpace(
                 recipientEmail))
@@ -88,17 +91,16 @@ public class EmailNotificationService
                 subject,
 
                 content =
-                    new[]
-                    {
-                        new
+                    htmlBody is null
+                        ? new[]
                         {
-                            type =
-                                "text/plain",
-
-                            value =
-                                body
+                            new { type = "text/plain", value = body }
                         }
-                    }
+                        : new[]
+                        {
+                            new { type = "text/plain", value = body },
+                            new { type = "text/html", value = htmlBody }
+                        }
             };
 
         var json =
@@ -130,7 +132,7 @@ public class EmailNotificationService
         {
             _logger.LogInformation(
                 "SendGrid accepted email for {recipient}.",
-                recipientEmail);
+                LogRedaction.MaskEmail(recipientEmail));
 
             return;
         }
@@ -140,7 +142,7 @@ public class EmailNotificationService
 
         _logger.LogError(
             "SendGrid rejected email for {recipient}. Status {status}. Response: {response}",
-            recipientEmail,
+            LogRedaction.MaskEmail(recipientEmail),
             (int)response.StatusCode,
             responseBody);
 

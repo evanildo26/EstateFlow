@@ -1,4 +1,9 @@
+using System.Security.Claims;
 using EstateFlow.Api.Services;
+using EstateFlow.Api.Services.Correspondence;
+using EstateFlow.Core.Models;
+using EstateFlow.Data.Context;
+using Microsoft.EntityFrameworkCore;
 using EstateFlow.Core.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,12 +19,21 @@ public class DiaryController : ControllerBase
     private readonly IEstateService _estateService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<DiaryController> _logger;
+    private readonly ICorrespondenceLog _correspondence;
+    private readonly EstateFlowDbContext _db;
 
     public DiaryController(
         IEstateService estateService,
         IHttpClientFactory httpClientFactory,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<DiaryController> logger,
+        ICorrespondenceLog correspondence,
+        EstateFlowDbContext db)
     {
+        _correspondence = correspondence;
+        _db = db;
+        _logger = logger;
         _estateService = estateService;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
@@ -150,6 +164,21 @@ public class DiaryController : ControllerBase
             });
         }
 
+        var note =
+            await _db.DiaryEntries
+                .AsNoTracking()
+                .Where(d => d.DiaryId == diaryId && d.EstateId == estateId)
+                .Select(d => d.Note)
+                .FirstOrDefaultAsync();
+
+        if (note is null)
+        {
+            return NotFound(new
+            {
+                message = "The selected diary entry could not be found."
+            });
+        }
+
         var functionUrl =
             _configuration["DiaryEmailFunctionUrl"];
 
@@ -195,6 +224,8 @@ public class DiaryController : ControllerBase
                 await response.Content
                     .ReadAsStringAsync();
 
+            await RecordAsync(estateId, functionRequest, note, response.IsSuccessStatusCode);
+
             if (response.IsSuccessStatusCode)
             {
                 return Ok(new
@@ -220,13 +251,16 @@ public class DiaryController : ControllerBase
         }
         catch (HttpRequestException ex)
         {
+            _logger.LogError(ex, "Diary email Function unreachable for estate {EstateId}, diary {DiaryId}.", estateId, diaryId);
+
+            await RecordAsync(estateId, functionRequest, note, sent: false);
+
             return StatusCode(
                 StatusCodes.Status502BadGateway,
                 new
                 {
                     message =
-                        "EstateFlow could not reach the diary email Function. " +
-                        ex.Message
+                        "EstateFlow could not reach the email service. Please try again shortly."
                 });
         }
     }
@@ -258,6 +292,24 @@ public class DiaryController : ControllerBase
             });
         }
     }
+
+    private Task RecordAsync(
+        Guid estateId,
+        DiaryEmailFunctionRequest email,
+        string note,
+        bool sent) =>
+        _correspondence.RecordAsync(new CorrespondenceRecord
+        {
+            EstateId = estateId,
+            Channel = "Email",
+            Kind = "Diary email",
+            SentBy = User.FindFirstValue(ClaimTypes.Name) ?? "unknown",
+            RecipientName = string.IsNullOrWhiteSpace(email.RecipientName) ? email.RecipientEmail : email.RecipientName,
+            RecipientEmail = email.RecipientEmail,
+            Subject = string.IsNullOrWhiteSpace(email.Subject) ? "Estate diary update" : email.Subject,
+            Summary = note.Length > 300 ? note[..300] + "…" : note,
+            Status = sent ? "Sent" : "Failed"
+        });
 
     private static string TryReadMessage(
         string responseBody)

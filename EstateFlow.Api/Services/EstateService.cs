@@ -2,18 +2,30 @@ using System.Net.Mail;
 using EstateFlow.Core.Dtos;
 using EstateFlow.Core.Interfaces;
 using EstateFlow.Core.Models;
+using EstateFlow.Core.Validation;
+using EstateFlow.Core.Workflow;
+using Microsoft.Extensions.Options;
 
 namespace EstateFlow.Api.Services;
 
 public class EstateService : IEstateService
 {
     private readonly IEstateRepository _repository;
+    private readonly MasterProcessOptions _processOptions;
+    private readonly TimeProvider _clock;
 
     public EstateService(
-        IEstateRepository repository)
+        IEstateRepository repository,
+        IOptions<MasterProcessOptions> processOptions,
+        TimeProvider clock)
     {
         _repository = repository;
+        _processOptions = processOptions.Value;
+        _clock = clock;
     }
+
+    private DateTime Today =>
+        _clock.GetLocalNow().Date;
 
     // =====================================================
     // GET ESTATE
@@ -34,9 +46,31 @@ public class EstateService : IEstateService
             FileNumber = estate.FileNumber,
             MastersReference = estate.MastersReference,
             DateOfDeath = estate.DateOfDeath,
-            EstateStatus = estate.EstateStatus,
+            EstateStatus = EstateStatuses.Normalize(estate.EstateStatus),
             IsDutiable = estate.IsDutiable,
             ControllerId = estate.ControllerId,
+
+            Progress = BuildProgress(estate),
+
+            TotalAssets =
+                estate.MovableAssets.Sum(x => x.Value) +
+                estate.ImmovableProperties.Sum(x => x.MunicipalValue) +
+                estate.FinancialClaims.Sum(x => x.Value),
+
+            TotalLiabilities =
+                estate.Liabilities.Sum(x => x.Amount),
+
+            Liabilities =
+                estate.Liabilities
+                    .OrderBy(x => x.CreditorName)
+                    .Select(x => new LiabilityDto
+                    {
+                        LiabilityId = x.LiabilityId,
+                        CreditorName = x.CreditorName,
+                        Description = x.Description,
+                        Amount = x.Amount
+                    })
+                    .ToList(),
 
             Controller =
                 estate.Controller is null
@@ -167,7 +201,7 @@ public class EstateService : IEstateService
                             IsCompleted =
                                 x.IsCompleted,
 
-                            NotifyBy = x.NotifyBy
+                            NotifyBy = x.NotifyBy.ToString()
                         })
                     .ToList(),
 
@@ -186,7 +220,7 @@ public class EstateService : IEstateService
                             TargetDate =
                                 x.TargetDate,
 
-                            Status = x.Status
+                            Status = x.Status.ToString()
                         })
                     .ToList(),
 
@@ -254,21 +288,10 @@ public class EstateService : IEstateService
                 "Progress update is required.");
         }
 
-        var validStatuses =
-            new[]
-            {
-                "Pending",
-                "InProgress",
-                "Complete"
-            };
-
         var normalizedStatus =
-            validStatuses.FirstOrDefault(
-                status => string.Equals(
-                    status,
-                    request.Status,
-                    StringComparison.OrdinalIgnoreCase))
-            ?? "InProgress";
+            StatusParsing.TryParseProgressStatus(request.Status, out var parsedStatus)
+                ? parsedStatus
+                : ProgressStatus.InProgress;
 
         var estate =
             await _repository.GetByIdAsync(estateId)
@@ -281,7 +304,7 @@ public class EstateService : IEstateService
                 StageId = Guid.NewGuid(),
                 EstateId = estateId,
                 StageName = request.StageName.Trim(),
-                TargetDate = request.TargetDate ?? DateTime.Today,
+                TargetDate = request.TargetDate ?? Today,
                 Status = normalizedStatus
             };
 
@@ -300,22 +323,7 @@ public class EstateService : IEstateService
                 "Progress update is required.");
         }
 
-        var validStatuses =
-            new[]
-            {
-                "Pending",
-                "InProgress",
-                "Complete"
-            };
-
-        var normalizedStatus =
-            validStatuses.FirstOrDefault(
-                status => string.Equals(
-                    status,
-                    request.Status,
-                    StringComparison.OrdinalIgnoreCase));
-
-        if (normalizedStatus is null)
+        if (!StatusParsing.TryParseProgressStatus(request.Status, out var normalizedStatus))
         {
             throw new ArgumentException(
                 "Progress status must be Pending, InProgress or Complete.");
@@ -334,7 +342,7 @@ public class EstateService : IEstateService
                 $"Progress update {request.StageId} not found on estate {estateId}.");
 
         stage.StageName = request.StageName.Trim();
-        stage.TargetDate = request.TargetDate ?? DateTime.Today;
+        stage.TargetDate = request.TargetDate ?? Today;
         stage.Status = normalizedStatus;
 
         await _repository.SaveAsync(estate);
@@ -394,7 +402,7 @@ public class EstateService : IEstateService
                         IsCompleted =
                             d.IsCompleted,
 
-                        NotifyBy = d.NotifyBy
+                        NotifyBy = d.NotifyBy.ToString()
                     }))
             .OrderBy(d => d.IsCompleted)
             .ThenBy(d => d.DueDate)
@@ -418,23 +426,7 @@ public class EstateService : IEstateService
                 "Diary due date is required.");
         }
 
-        var validNotificationMethods =
-            new[]
-            {
-                "Email",
-                "InApp",
-                "Both"
-            };
-
-        var notifyBy =
-            validNotificationMethods
-                .FirstOrDefault(
-                    x => string.Equals(
-                        x,
-                        request.NotifyBy,
-                        StringComparison.OrdinalIgnoreCase));
-
-        if (notifyBy is null)
+        if (!StatusParsing.TryParseNotifyMethod(request.NotifyBy, out var notifyBy))
         {
             throw new ArgumentException(
                 "Notification method must be Email, InApp or Both.");
@@ -569,10 +561,14 @@ public class EstateService : IEstateService
         {
             latestReport.IsPaused =
                 isPaused;
+
+            await _repository.SaveAsync(estate);
         }
         else
         {
-            estate.AutomatedReports.Add(
+            // Added explicitly: through the navigation, EF would treat the
+            // pre-set Guid key as an existing row and the save would fail.
+            await _repository.AddAutomatedReportAsync(
                 new AutomatedReport
                 {
                     EstateId = estateId,
@@ -587,8 +583,6 @@ public class EstateService : IEstateService
                     IsPaused = isPaused
                 });
         }
-
-        await _repository.SaveAsync(estate);
     }
 
     // =====================================================
@@ -613,11 +607,16 @@ public class EstateService : IEstateService
                 "Deceased full name is required.");
         }
 
+        var deceasedId =
+            ValidateDeceasedIdNumber(
+                request.DeceasedIdNumber,
+                request.DateOfDeath);
+
         var estate =
             new Estate
             {
                 FileNumber =
-                    request.FileNumber,
+                    request.FileNumber.Trim(),
 
                 MastersReference =
                     request.MastersReference,
@@ -629,7 +628,7 @@ public class EstateService : IEstateService
                     request.IsDutiable,
 
                 EstateStatus =
-                    "Reported",
+                    EstateStatuses.Reported,
 
                 ControllerId =
                     controllerId,
@@ -638,10 +637,10 @@ public class EstateService : IEstateService
                     new Deceased
                     {
                         FullName =
-                            request.DeceasedFullName,
+                            request.DeceasedFullName.Trim(),
 
                         IdNumber =
-                            request.DeceasedIdNumber,
+                            deceasedId,
 
                         MaritalStatus =
                             request.DeceasedMaritalStatus
@@ -659,6 +658,23 @@ public class EstateService : IEstateService
         Guid estateId,
         UpdateEstateRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.FileNumber))
+        {
+            throw new ArgumentException(
+                "File number is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DeceasedFullName))
+        {
+            throw new ArgumentException(
+                "Deceased full name is required.");
+        }
+
+        var deceasedId =
+            ValidateDeceasedIdNumber(
+                request.DeceasedIdNumber,
+                request.DateOfDeath);
+
         var estate =
             await _repository.GetByIdAsync(
                 estateId)
@@ -666,7 +682,7 @@ public class EstateService : IEstateService
                 $"Estate {estateId} not found.");
 
         estate.FileNumber =
-            request.FileNumber;
+            request.FileNumber.Trim();
 
         estate.MastersReference =
             request.MastersReference;
@@ -677,8 +693,12 @@ public class EstateService : IEstateService
         estate.IsDutiable =
             request.IsDutiable;
 
+        // Once the stage checklist is in use, the status follows it.
         estate.EstateStatus =
-            request.EstateStatus;
+            estate.Milestones.Count > 0
+                ? MasterProcess.DeriveEstateStatus(
+                    estate.Milestones.Select(m => m.Stage).ToList())
+                : EstateStatuses.Normalize(request.EstateStatus);
 
         if (estate.Deceased is null)
         {
@@ -688,10 +708,10 @@ public class EstateService : IEstateService
                     EstateId = estateId,
 
                     FullName =
-                        request.DeceasedFullName,
+                        request.DeceasedFullName.Trim(),
 
                     IdNumber =
-                        request.DeceasedIdNumber,
+                        deceasedId,
 
                     MaritalStatus =
                         request.DeceasedMaritalStatus
@@ -700,10 +720,10 @@ public class EstateService : IEstateService
         else
         {
             estate.Deceased.FullName =
-                request.DeceasedFullName;
+                request.DeceasedFullName.Trim();
 
             estate.Deceased.IdNumber =
-                request.DeceasedIdNumber;
+                deceasedId;
 
             estate.Deceased.MaritalStatus =
                 request.DeceasedMaritalStatus;
@@ -764,8 +784,9 @@ public class EstateService : IEstateService
                     request.FullName.Trim(),
 
                 IdNumber =
-                    request.IdNumber?.Trim()
-                    ?? string.Empty,
+                    ValidatePersonIdNumber(
+                        request.IdNumber,
+                        "executor"),
 
                 Role =
                     request.Role?.Trim()
@@ -846,8 +867,9 @@ public class EstateService : IEstateService
                     request.FullName.Trim(),
 
                 IdNumber =
-                    request.IdNumber?.Trim()
-                    ?? string.Empty,
+                    ValidatePersonIdNumber(
+                        request.IdNumber,
+                        "beneficiary"),
 
                 Relationship =
                     request.Relationship?.Trim()
@@ -1118,9 +1140,16 @@ public class EstateService : IEstateService
     // MAPPING
     // =====================================================
 
-    private static EstateSummaryDto MapToSummary(
+    private EstateSummaryDto MapToSummary(
         Estate estate)
     {
+        var progress = EvaluateProgress(estate);
+
+        var openDiary =
+            estate.DiaryEntries
+                .Where(d => !d.IsCompleted)
+                .ToList();
+
         return new EstateSummaryDto
         {
             EstateId = estate.EstateId,
@@ -1130,7 +1159,7 @@ public class EstateService : IEstateService
                 estate.Deceased?.FullName,
 
             EstateStatus =
-                estate.EstateStatus,
+                EstateStatuses.Normalize(estate.EstateStatus),
 
             DateOfDeath =
                 estate.DateOfDeath,
@@ -1139,9 +1168,320 @@ public class EstateService : IEstateService
                 estate.Controller?.StaffName,
 
             OpenDiaryCount =
-                estate.DiaryEntries.Count(
-                    d => !d.IsCompleted)
+                openDiary.Count,
+
+            OverdueDiaryCount =
+                openDiary.Count(d => d.DueDate.Date < Today),
+
+            NextDiaryDue =
+                openDiary
+                    .OrderBy(d => d.DueDate)
+                    .Select(d => (DateTime?)d.DueDate)
+                    .FirstOrDefault(),
+
+            ProgressPercent =
+                progress.PercentComplete,
+
+            NextMilestoneTitle =
+                progress.NextMilestone?.Title,
+
+            NextDeadline =
+                progress.NextMilestone?.DueDate,
+
+            NeedsAttention =
+                progress.NeedsAttention,
+
+            AttentionReason =
+                progress.AttentionReason,
+
+            DaysOverdue =
+                progress.DaysOverdue
         };
+    }
+
+    private EstateProgress EvaluateProgress(Estate estate) =>
+        MasterProcess.Evaluate(
+            estate.DateOfDeath,
+            CompletedMilestones(estate),
+            Today,
+            _processOptions);
+
+    private static Dictionary<EstateMilestoneStage, DateTime> CompletedMilestones(Estate estate) =>
+        estate.Milestones
+            .GroupBy(m => m.Stage)
+            .ToDictionary(g => g.Key, g => g.First().CompletedOn);
+
+    private EstateProgressDto BuildProgress(Estate estate)
+    {
+        var completed = CompletedMilestones(estate);
+        var progress = EvaluateProgress(estate);
+
+        var notes =
+            estate.Milestones
+                .GroupBy(m => m.Stage)
+                .ToDictionary(g => g.Key, g => g.First().Notes);
+
+        return new EstateProgressDto
+        {
+            PercentComplete = progress.PercentComplete,
+            CompletedCount = progress.CompletedCount,
+            TotalCount = MasterProcess.Definitions.Count,
+            IsFinalised = progress.IsFinalised,
+            NeedsAttention = progress.NeedsAttention,
+            AttentionReason = progress.AttentionReason,
+            DaysOverdue = progress.DaysOverdue,
+            NextMilestoneTitle = progress.NextMilestone?.Title,
+            NextDeadline = progress.NextMilestone?.DueDate,
+            EarliestAccountLodgingDate =
+                MasterProcess.EarliestAccountLodgingDate(completed, _processOptions),
+
+            Milestones =
+                progress.Milestones
+                    .Select(m => new MilestoneDto
+                    {
+                        Stage = m.Stage.ToString(),
+                        Order = (int)m.Stage,
+                        Title = m.Title,
+                        Description = m.Description,
+                        CompletedOn = m.CompletedOn,
+                        Notes = notes.GetValueOrDefault(m.Stage),
+                        DueDate = m.DueDate,
+                        IsStatutoryDeadline = m.IsStatutoryDeadline,
+                        DeadlineBasis = m.DeadlineBasis,
+                        IsOverdue = m.IsOverdue,
+                        IsDueSoon = m.IsDueSoon,
+                        IsNext = m.IsNext
+                    })
+                    .ToList()
+        };
+    }
+
+    // =====================================================
+    // LIABILITIES (debts of the deceased)
+    // =====================================================
+
+    public async Task<Guid> AddLiabilityAsync(
+        Guid estateId,
+        CreateLiabilityRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.CreditorName))
+        {
+            throw new ArgumentException(
+                "Creditor name is required.");
+        }
+
+        if (request.Amount < 0)
+        {
+            throw new ArgumentException(
+                "The amount owed cannot be negative.");
+        }
+
+        if (!await _repository.ExistsAsync(estateId))
+        {
+            throw new InvalidOperationException(
+                $"Estate {estateId} not found.");
+        }
+
+        var liability =
+            new Liability
+            {
+                LiabilityId = Guid.NewGuid(),
+                EstateId = estateId,
+                CreditorName = request.CreditorName.Trim(),
+                Description = string.IsNullOrWhiteSpace(request.Description)
+                    ? null
+                    : request.Description.Trim(),
+                Amount = request.Amount
+            };
+
+        await _repository.AddLiabilityAsync(liability);
+
+        return liability.LiabilityId;
+    }
+
+    public async Task DeleteLiabilityAsync(
+        Guid estateId,
+        Guid liabilityId)
+    {
+        var estate =
+            await _repository.GetByIdAsync(estateId)
+            ?? throw new InvalidOperationException(
+                $"Estate {estateId} not found.");
+
+        var liability =
+            estate.Liabilities
+                .FirstOrDefault(x => x.LiabilityId == liabilityId)
+            ?? throw new InvalidOperationException(
+                $"Liability {liabilityId} not found.");
+
+        estate.Liabilities.Remove(liability);
+
+        await _repository.SaveAsync(estate);
+    }
+
+    // =====================================================
+    // STAGE CHECKLIST (Master's process)
+    // =====================================================
+
+    public async Task<EstateProgressDto> CompleteMilestoneAsync(
+        Guid estateId,
+        string stage,
+        CompleteMilestoneRequest request,
+        string recordedBy)
+    {
+        var parsedStage = ParseStage(stage);
+
+        if (request.CompletedOn == default)
+        {
+            throw new ArgumentException(
+                "The date the stage was completed is required.");
+        }
+
+        if (request.CompletedOn.Date > Today)
+        {
+            throw new ArgumentException(
+                "A stage cannot be completed in the future.");
+        }
+
+        var estate =
+            await _repository.GetByIdAsync(estateId)
+            ?? throw new InvalidOperationException(
+                $"Estate {estateId} not found.");
+
+        if (request.CompletedOn.Date < estate.DateOfDeath.Date)
+        {
+            throw new ArgumentException(
+                "A stage cannot be completed before the date of death.");
+        }
+
+        var notes =
+            string.IsNullOrWhiteSpace(request.Notes)
+                ? null
+                : request.Notes.Trim();
+
+        var existing =
+            estate.Milestones.FirstOrDefault(m => m.Stage == parsedStage);
+
+        var completedStages =
+            estate.Milestones
+                .Select(m => m.Stage)
+                .Append(parsedStage)
+                .Distinct()
+                .ToList();
+
+        estate.EstateStatus =
+            MasterProcess.DeriveEstateStatus(completedStages);
+
+        if (existing is not null)
+        {
+            existing.CompletedOn = request.CompletedOn.Date;
+            existing.Notes = notes;
+            existing.RecordedBy = recordedBy;
+            existing.RecordedAtUtc = DateTime.UtcNow;
+
+            await _repository.SaveAsync(estate);
+        }
+        else
+        {
+            // Added explicitly: EF would otherwise treat a child with a
+            // pre-set Guid key as an existing row and try to update it.
+            await _repository.AddMilestoneAsync(
+                new EstateMilestone
+                {
+                    EstateId = estateId,
+                    Stage = parsedStage,
+                    CompletedOn = request.CompletedOn.Date,
+                    Notes = notes,
+                    RecordedBy = recordedBy
+                });
+        }
+
+        return BuildProgress(estate);
+    }
+
+    public async Task<EstateProgressDto> ReopenMilestoneAsync(
+        Guid estateId,
+        string stage)
+    {
+        var parsedStage = ParseStage(stage);
+
+        var estate =
+            await _repository.GetByIdAsync(estateId)
+            ?? throw new InvalidOperationException(
+                $"Estate {estateId} not found.");
+
+        var existing =
+            estate.Milestones.FirstOrDefault(m => m.Stage == parsedStage);
+
+        if (existing is not null)
+        {
+            estate.Milestones.Remove(existing);
+
+            estate.EstateStatus =
+                MasterProcess.DeriveEstateStatus(
+                    estate.Milestones.Select(m => m.Stage).ToList());
+
+            await _repository.SaveAsync(estate);
+        }
+
+        return BuildProgress(estate);
+    }
+
+    private static EstateMilestoneStage ParseStage(string stage)
+    {
+        if (Enum.TryParse<EstateMilestoneStage>(stage, ignoreCase: true, out var parsed) &&
+            Enum.IsDefined(parsed))
+        {
+            return parsed;
+        }
+
+        throw new ArgumentException(
+            $"Unknown stage '{stage}'.");
+    }
+
+    // =====================================================
+    // ID NUMBERS
+    // =====================================================
+
+    // The deceased's ID: must be a valid SA ID (or a passport number), and
+    // the date of birth it contains must be before the date of death.
+    private static string ValidateDeceasedIdNumber(
+        string? idNumber,
+        DateTime dateOfDeath)
+    {
+        var check = SouthAfricanIdNumber.Check(idNumber);
+
+        if (!check.IsAcceptable)
+        {
+            throw new ArgumentException(
+                $"Deceased ID number: {check.Error}");
+        }
+
+        if (check.DateOfBirth is DateTime born &&
+            dateOfDeath != default &&
+            born >= dateOfDeath.Date)
+        {
+            throw new ArgumentException(
+                "The deceased's ID number gives a date of birth on or after the date of death. " +
+                "Please check the ID number and the date of death.");
+        }
+
+        return check.Normalized;
+    }
+
+    private static string ValidatePersonIdNumber(
+        string? idNumber,
+        string personLabel)
+    {
+        var check = SouthAfricanIdNumber.Check(idNumber);
+
+        if (!check.IsAcceptable)
+        {
+            throw new ArgumentException(
+                $"The {personLabel}'s ID number is not valid. {check.Error}");
+        }
+
+        return check.Normalized;
     }
 
     // =====================================================

@@ -1,0 +1,107 @@
+<UserControl x:Class="EstateFlow.Desktop.Views.EstateTabs.LiabilitiesTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: EstateDetailViewModel (inherited from EstateDetailView). -->
+
+    <ScrollViewer Padding="20" VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="700" HorizontalAlignment="Left">
+
+            <!-- ESTATE POSITION -->
+            <Border Style="{StaticResource SectionCardBorderStyle}" Background="#FBFAF8">
+                <StackPanel>
+                    <TextBlock Text="ESTATE POSITION" Style="{StaticResource SectionTitleStyle}"/>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Total assets" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Estate.TotalAssets, StringFormat='R {0:N2}'}" Style="{StaticResource FieldValueMonoStyle}"/>
+                    </Grid>
+
+                    <Grid Style="{StaticResource FieldRowGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Total liabilities" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Estate.TotalLiabilities, StringFormat='R {0:N2}'}" Style="{StaticResource FieldValueMonoStyle}" Foreground="#8B3A3A"/>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Net estate value" Style="{StaticResource FieldLabelStyle}" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Estate.NetValue, StringFormat='R {0:N2}'}" Style="{StaticResource FieldValueMonoStyle}" FontWeight="SemiBold"/>
+                    </Grid>
+
+                    <TextBlock Text="Assets = movable assets + municipal value of property + bank/insurance claims."
+                               FontFamily="{StaticResource SansFont}" FontSize="11" Foreground="#9CA0A8" Margin="0,10,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ADD -->
+            <Border Style="{StaticResource SectionCardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="ADD LIABILITY" Style="{StaticResource SectionTitleStyle}"/>
+
+                    <TextBlock Text="Creditor" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewLiabilityCreditorName, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="Creditor"/>
+
+                    <TextBlock Text="Description (e.g. home loan, credit card, SARS, funeral costs)" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewLiabilityDescription, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="Description"/>
+
+                    <TextBlock Text="Amount owed (R)" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewLiabilityAmount, UpdateSourceTrigger=PropertyChanged}"
+                             FontFamily="{StaticResource MonoFont}"
+                             AutomationProperties.Name="Amount owed in rand"/>
+
+                    <Button Content="+ Add Liability"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Command="{Binding AddLiabilityCommand}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- LIST -->
+            <ItemsControl ItemsSource="{Binding Estate.Liabilities}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource SectionCardBorderStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="{Binding CreditorName}" FontFamily="{StaticResource SerifFont}" FontSize="15" Foreground="#16181C"/>
+                                    <TextBlock Text="{Binding Description}" Style="{StaticResource FieldLabelStyle}" TextWrapping="Wrap" Margin="0,3,0,0"
+                                               Visibility="{Binding Description, Converter={StaticResource StringToVisConverter}}"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Column="1" Text="{Binding Amount, StringFormat='R {0:N2}'}"
+                                           Style="{StaticResource FieldValueMonoStyle}" VerticalAlignment="Center" Margin="0,0,16,0"/>
+
+                                <Button Grid.Column="2" Content="Remove"
+                                        Style="{StaticResource RemoveLinkButtonStyle}"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding DataContext.DeleteLiabilityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding LiabilityId}"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

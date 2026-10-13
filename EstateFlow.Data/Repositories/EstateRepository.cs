@@ -30,7 +30,9 @@ public class EstateRepository : IEstateRepository
             .Include(e => e.ProgressStages)
             .Include(e => e.ScannedDocuments)
             .Include(e => e.AutomatedReports)
+            .Include(e => e.Milestones)
             .Include(e => e.Controller)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(
                 e => e.EstateId == estateId);
     }
@@ -42,6 +44,8 @@ public class EstateRepository : IEstateRepository
             .Include(e => e.Controller)
             .Include(e => e.DiaryEntries)
             .Include(e => e.AutomatedReports)
+            .Include(e => e.Milestones)
+            .AsSplitQuery()
             .AsNoTracking()
             .ToListAsync();
     }
@@ -57,6 +61,8 @@ public class EstateRepository : IEstateRepository
             .Include(e => e.Controller)
             .Include(e => e.DiaryEntries)
             .Include(e => e.AutomatedReports)
+            .Include(e => e.Milestones)
+            .AsSplitQuery()
             .AsNoTracking()
             .ToListAsync();
     }
@@ -101,6 +107,17 @@ public class EstateRepository : IEstateRepository
             .AsNoTracking()
             .AnyAsync(
                 e => e.EstateId == estateId);
+    }
+
+    public async Task<bool> IsAssignedToControllerAsync(
+        Guid estateId,
+        Guid controllerId)
+    {
+        return await _context.Estates
+            .AsNoTracking()
+            .AnyAsync(
+                e => e.EstateId == estateId &&
+                     e.ControllerId == controllerId);
     }
 
     // =====================================================
@@ -165,6 +182,33 @@ public class EstateRepository : IEstateRepository
         ProgressStage progressStage)
     {
         _context.Entry(progressStage).State =
+            EntityState.Added;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task AddLiabilityAsync(
+        Liability liability)
+    {
+        _context.Entry(liability).State =
+            EntityState.Added;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task AddMilestoneAsync(
+        EstateMilestone milestone)
+    {
+        _context.Entry(milestone).State =
+            EntityState.Added;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task AddAutomatedReportAsync(
+        AutomatedReport report)
+    {
+        _context.Entry(report).State =
             EntityState.Added;
 
         await _context.SaveChangesAsync();

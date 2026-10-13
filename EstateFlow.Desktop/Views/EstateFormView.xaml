@@ -35,11 +35,14 @@
 
                         <StackPanel Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVisConverter}}">
                             <TextBlock Text="Status" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
-                            <ComboBox SelectedItem="{Binding EstateStatus}" Padding="8,6" FontFamily="{StaticResource SansFont}" FontSize="12" Margin="0,0,0,14">
-                                <ComboBoxItem Content="Reported"/>
-                                <ComboBoxItem Content="In Progress"/>
-                                <ComboBoxItem Content="Finalised"/>
-                            </ComboBox>
+                            <!-- Bound to plain strings: binding SelectedItem to ComboBoxItems used to save
+                                 "System.Windows.Controls.ComboBoxItem: In Progress" as the status. -->
+                            <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding EstateStatus}"
+                                      Padding="8,6" FontFamily="{StaticResource SansFont}" FontSize="12" Margin="0,0,0,4"
+                                      AutomationProperties.Name="Estate status"/>
+                            <TextBlock Text="Once stages are recorded on the Checklist tab, the status follows the checklist."
+                                       FontFamily="{StaticResource SansFont}" FontSize="11" Foreground="#9CA0A8"
+                                       TextWrapping="Wrap" Margin="0,0,0,14"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -54,7 +57,11 @@
 
                         <TextBlock Text="Identity Number" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding DeceasedIdNumber, UpdateSourceTrigger=PropertyChanged}"
-                                 Padding="8,6" FontFamily="{StaticResource MonoFont}" FontSize="12" Margin="0,0,0,14"/>
+                                 Padding="8,6" FontFamily="{StaticResource MonoFont}" FontSize="12" Margin="0,0,0,14"
+                                 ToolTip="13-digit SA ID number, or a passport number for foreign nationals"/>
+                        <TextBlock Text="{Binding DeceasedIdHint}"
+                                   Style="{StaticResource InputHintStyle}" Margin="0,-10,0,14"
+                                   Visibility="{Binding DeceasedIdHint, Converter={StaticResource StringToVisConverter}}"/>
 
                         <TextBlock Text="Marital Status" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
                         <TextBox Text="{Binding DeceasedMaritalStatus, UpdateSourceTrigger=PropertyChanged}"

@@ -27,13 +27,16 @@ public class DocumentsController : ControllerBase
 
     private readonly EstateFlowDbContext _dbContext;
     private readonly IBlobStorageService _blobStorage;
+    private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         EstateFlowDbContext dbContext,
-        IBlobStorageService blobStorage)
+        IBlobStorageService blobStorage,
+        ILogger<DocumentsController> logger)
     {
         _dbContext = dbContext;
         _blobStorage = blobStorage;
+        _logger = logger;
     }
 
     // ======================================================
@@ -183,6 +186,8 @@ public class DocumentsController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Document upload failed for estate {EstateId}.", estateId);
+
             if (blobUploaded)
             {
                 try
@@ -201,9 +206,7 @@ public class DocumentsController : ControllerBase
                 new
                 {
                     message =
-                        "The document could not be uploaded to Azure Blob Storage. " +
-                        "Check the AzureStorage connection settings on the hosted API. " +
-                        $"Details: {ex.Message}"
+                        "The document could not be uploaded to Azure Blob Storage. Please try again, and contact support if it keeps failing."
                 });
         }
     }
@@ -276,6 +279,11 @@ public class DocumentsController : ControllerBase
             }
         }
 
+        if (lastStorageError is not null and not FileNotFoundException)
+        {
+            _logger.LogError(lastStorageError, "Document download failed for estate {EstateId}, document {DocumentId}.", estateId, documentId);
+        }
+
         if (lastStorageError is FileNotFoundException)
         {
             return NotFound(new
@@ -292,9 +300,7 @@ public class DocumentsController : ControllerBase
             new
             {
                 message =
-                    "Azure Blob Storage could not be reached while opening this document. " +
-                    "Check the AzureStorage settings on the hosted API. " +
-                    $"Details: {lastStorageError?.Message ?? "Unknown storage error."}"
+                    "Azure Blob Storage could not be reached while opening this document. Please try again shortly."
             });
     }
 
@@ -344,13 +350,14 @@ public class DocumentsController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Document delete failed for estate {EstateId}, document {DocumentId}.", estateId, documentId);
+
             return StatusCode(
                 StatusCodes.Status503ServiceUnavailable,
                 new
                 {
                     message =
-                        "The document could not be deleted from Azure Blob Storage. " +
-                        $"Details: {ex.Message}"
+                        "The document could not be deleted from Azure Blob Storage. Please try again shortly."
                 });
         }
     }

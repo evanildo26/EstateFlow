@@ -1,4 +1,4 @@
-﻿namespace EstateFlow.Desktop.Services;
+namespace EstateFlow.Desktop.Services;
 
 public interface IAuthState
 {
@@ -6,4 +6,9 @@ public interface IAuthState
     string? FullName { get; set; }
     string? Role { get; set; }
     bool IsAuthenticated { get; }
+
+    bool IsAdministrator { get; }
+    string RoleLabel { get; }
+
+    void Clear();
 }

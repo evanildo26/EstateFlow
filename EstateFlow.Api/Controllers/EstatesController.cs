@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using EstateFlow.Api.Services;
+using EstateFlow.Api.Services.Correspondence;
 using EstateFlow.Core.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +13,14 @@ namespace EstateFlow.Api.Controllers;
 public class EstatesController : ControllerBase
 {
     private readonly IEstateService _estateService;
+    private readonly ICorrespondenceLog _correspondence;
 
     public EstatesController(
-        IEstateService estateService)
+        IEstateService estateService,
+        ICorrespondenceLog correspondence)
     {
         _estateService = estateService;
+        _correspondence = correspondence;
     }
 
     // ─────────────────────────────────────────────
@@ -592,5 +597,143 @@ public class EstatesController : ControllerBase
                 message = ex.Message
             });
         }
+    }
+
+    // ─────────────────────────────────────────────
+    // Liabilities (debts of the deceased)
+    // ─────────────────────────────────────────────
+
+    [HttpPost("{estateId:guid}/liabilities")]
+    public async Task<ActionResult> AddLiability(
+        Guid estateId,
+        [FromBody] CreateLiabilityRequest request)
+    {
+        try
+        {
+            var liabilityId =
+                await _estateService.AddLiabilityAsync(
+                    estateId,
+                    request);
+
+            return Ok(new
+            {
+                liabilityId
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    [HttpDelete(
+        "{estateId:guid}/liabilities/{liabilityId:guid}")]
+    public async Task<ActionResult> DeleteLiability(
+        Guid estateId,
+        Guid liabilityId)
+    {
+        try
+        {
+            await _estateService.DeleteLiabilityAsync(
+                estateId,
+                liabilityId);
+
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // Stage checklist (Master's process)
+    // ─────────────────────────────────────────────
+
+    [HttpPut("{estateId:guid}/milestones/{stage}")]
+    public async Task<ActionResult<EstateProgressDto>> CompleteMilestone(
+        Guid estateId,
+        string stage,
+        [FromBody] CompleteMilestoneRequest request)
+    {
+        try
+        {
+            var progress =
+                await _estateService.CompleteMilestoneAsync(
+                    estateId,
+                    stage,
+                    request,
+                    User.FindFirstValue(ClaimTypes.Name) ?? "unknown");
+
+            return Ok(progress);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    [HttpDelete("{estateId:guid}/milestones/{stage}")]
+    public async Task<ActionResult<EstateProgressDto>> ReopenMilestone(
+        Guid estateId,
+        string stage)
+    {
+        try
+        {
+            var progress =
+                await _estateService.ReopenMilestoneAsync(
+                    estateId,
+                    stage);
+
+            return Ok(progress);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // Correspondence history
+    // ─────────────────────────────────────────────
+
+    [HttpGet("{estateId:guid}/correspondence")]
+    public async Task<ActionResult<List<CorrespondenceDto>>> GetCorrespondence(
+        Guid estateId)
+    {
+        return Ok(await _correspondence.GetForEstateAsync(estateId));
     }
 }

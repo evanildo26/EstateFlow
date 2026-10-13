@@ -1,4 +1,5 @@
 ﻿using System.Windows.Input;
+using EstateFlow.Desktop.Services;
 
 namespace EstateFlow.Desktop.Mvvm;
 
@@ -45,6 +46,8 @@ public class AsyncRelayCommand : ICommand
 
     public bool CanExecute(object? parameter) => !_isExecuting && (_canExecute?.Invoke(parameter) ?? true);
 
+    // async void is unavoidable for ICommand, so exceptions are caught here:
+    // an unhandled one would otherwise close the whole application.
     public async void Execute(object? parameter)
     {
         _isExecuting = true;
@@ -52,6 +55,10 @@ public class AsyncRelayCommand : ICommand
         try
         {
             await _execute(parameter);
+        }
+        catch (Exception ex)
+        {
+            ErrorReporter.Report(ex, "Command failed");
         }
         finally
         {

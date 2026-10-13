@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Input;
 using EstateFlow.Desktop.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +25,13 @@ public class ShellViewModel : BaseViewModel, INavigationService, IShellState
             if (SetProperty(ref _currentViewModel, value))
             {
                 OnPropertyChanged(nameof(IsLoggedIn));
+
+                // The signed-in user can change between screens (sign in /
+                // sign out), so refresh what the sidebar shows.
+                OnPropertyChanged(nameof(UserDisplayName));
+                OnPropertyChanged(nameof(UserRoleLabel));
+                OnPropertyChanged(nameof(UserInitials));
+                OnPropertyChanged(nameof(IsAdministrator));
             }
         }
     }
@@ -36,6 +43,25 @@ public class ShellViewModel : BaseViewModel, INavigationService, IShellState
     public bool IsLoggedIn =>
         CurrentViewModel is not null &&
         CurrentViewModel is not LoginViewModel;
+
+    // Shown in the sidebar — the person actually signed in.
+    public string UserDisplayName =>
+        string.IsNullOrWhiteSpace(_authState.FullName)
+            ? "Signed in"
+            : _authState.FullName;
+
+    public string UserRoleLabel =>
+        _authState.RoleLabel;
+
+    public string UserInitials =>
+        string.Concat(
+            UserDisplayName
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Take(2)
+                .Select(part => char.ToUpperInvariant(part[0])));
+
+    public bool IsAdministrator =>
+        _authState.IsAdministrator;
 
     // ==========================================
     // CURRENT SCREEN
@@ -78,7 +104,7 @@ public class ShellViewModel : BaseViewModel, INavigationService, IShellState
             new RelayCommand(ExecuteNavigate);
 
         LogoutCommand =
-            new RelayCommand(_ => ExecuteLogout());
+            new RelayCommand(_ => SignOut());
 
         // IMPORTANT:
         // DO NOT call NavigateToLogin() here.
@@ -88,14 +114,19 @@ public class ShellViewModel : BaseViewModel, INavigationService, IShellState
     }
 
     // ==========================================
-    // LOGOUT
+    // SIGN OUT
     // ==========================================
 
-    private void ExecuteLogout()
+    // Also used when the session expires. Clears the token and removes any
+    // documents opened during the session from the temp folder.
+    public void SignOut()
     {
-        _authState.Token = null;
-        _authState.FullName = null;
-        _authState.Role = null;
+        if (!IsLoggedIn && !_authState.IsAuthenticated)
+            return;
+
+        _authState.Clear();
+        LastOpenedEstateId = null;
+        TempFiles.CleanUp();
 
         NavigateToLogin();
     }
@@ -129,6 +160,14 @@ public class ShellViewModel : BaseViewModel, INavigationService, IShellState
 
             case "new-estate":
                 NavigateToNewEstate();
+                break;
+
+            case "admin":
+                NavigateToAdmin();
+                break;
+
+            case "security":
+                NavigateToSecurity();
                 break;
         }
     }
@@ -271,5 +310,42 @@ public class ShellViewModel : BaseViewModel, INavigationService, IShellState
         CurrentViewModel = formViewModel;
 
         _ = formViewModel.InitializeForEditAsync(estateId);
+    }
+
+    // ==========================================
+    // FIRM ADMINISTRATION (Firm Administrators only)
+    // ==========================================
+
+    public void NavigateToAdmin()
+    {
+        if (!_authState.IsAdministrator)
+            return;
+
+        CurrentScreen = "admin";
+
+        var adminViewModel =
+            _serviceProvider
+                .GetRequiredService<AdminViewModel>();
+
+        CurrentViewModel = adminViewModel;
+
+        _ = adminViewModel.LoadAsync();
+    }
+
+    // ==========================================
+    // MY ACCOUNT / TWO-FACTOR AUTHENTICATION
+    // ==========================================
+
+    public void NavigateToSecurity()
+    {
+        CurrentScreen = "security";
+
+        var securityViewModel =
+            _serviceProvider
+                .GetRequiredService<SecurityViewModel>();
+
+        CurrentViewModel = securityViewModel;
+
+        _ = securityViewModel.LoadAsync();
     }
 }

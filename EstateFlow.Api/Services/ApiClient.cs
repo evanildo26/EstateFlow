@@ -41,12 +41,12 @@ public class ApiClient : IApiClient
     }
 
     public async Task<LoginResponse> VerifyTwoFactorAsync(
-        string email,
+        string twoFactorToken,
         string code)
     {
         var request = new VerifyTwoFactorRequest
         {
-            Email = email,
+            TwoFactorToken = twoFactorToken,
             Code = code
         };
 

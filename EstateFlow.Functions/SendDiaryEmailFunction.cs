@@ -6,6 +6,7 @@ using EstateFlow.Functions.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EstateFlow.Functions;
@@ -15,15 +16,20 @@ public class SendDiaryEmailFunction
     private readonly EstateFlowDbContext _context;
     private readonly EmailNotificationService _notificationService;
     private readonly ILogger<SendDiaryEmailFunction> _logger;
+    private readonly string _firmName;
+    private readonly string _division;
 
     public SendDiaryEmailFunction(
         EstateFlowDbContext context,
         EmailNotificationService notificationService,
-        ILogger<SendDiaryEmailFunction> logger)
+        ILogger<SendDiaryEmailFunction> logger,
+        IConfiguration configuration)
     {
         _context = context;
         _notificationService = notificationService;
         _logger = logger;
+        _firmName = configuration["Firm:Name"] ?? "STBB Incorporated";
+        _division = configuration["Firm:Division"] ?? "Deceased Estates Division";
     }
 
     [Function("SendDiaryEmailFunction")]
@@ -134,18 +140,30 @@ public class SendDiaryEmailFunction
                 diaryEntry.IsCompleted,
                 controllerName);
 
+        var html =
+            BuildHtmlBody(
+                recipientName,
+                deceasedName,
+                estate.FileNumber,
+                diaryEntry.Note,
+                diaryEntry.DueDate,
+                diaryEntry.IsCompleted,
+                controllerName,
+                estate.Controller?.Email);
+
         try
         {
             await _notificationService.NotifyAsync(
                 input.RecipientEmail.Trim(),
                 subject,
-                body);
+                body,
+                html);
 
             _logger.LogInformation(
                 "Manual diary email sent. Estate {estateId}, Diary {diaryId}, Recipient {recipient}.",
                 estate.EstateId,
                 diaryEntry.DiaryId,
-                input.RecipientEmail.Trim());
+                LogRedaction.MaskEmail(input.RecipientEmail));
 
             return await CreateResponseAsync(
                 request,
@@ -159,13 +177,47 @@ public class SendDiaryEmailFunction
                 "Manual diary email failed. Estate {estateId}, Diary {diaryId}, Recipient {recipient}.",
                 estate.EstateId,
                 diaryEntry.DiaryId,
-                input.RecipientEmail.Trim());
+                LogRedaction.MaskEmail(input.RecipientEmail));
 
             return await CreateResponseAsync(
                 request,
                 HttpStatusCode.BadGateway,
-                $"Email delivery failed: {ex.Message}");
+                "Email delivery failed. Please try again shortly, or contact support if it keeps failing.");
         }
+    }
+
+    // The same letter as BuildEmailBody, on the firm's letterhead.
+    private string BuildHtmlBody(
+        string recipientName,
+        string deceasedName,
+        string fileNumber,
+        string note,
+        DateTime dueDate,
+        bool isCompleted,
+        string? controllerName,
+        string? controllerEmail)
+    {
+        var e = EmailLayout.Encode;
+
+        var signOff =
+            string.IsNullOrWhiteSpace(controllerName)
+                ? "Estate Administration"
+                : $"{e(controllerName)}<br><span style=\"color:#6B6E76;\">Estate Controller</span>";
+
+        if (!string.IsNullOrWhiteSpace(controllerEmail))
+            signOff += $"<br><a href=\"mailto:{e(controllerEmail)}\" style=\"color:#6E2A2A;\">{e(controllerEmail)}</a>";
+
+        var inner = $"""
+            <p style="margin:0 0 14px">Dear {e(recipientName)},</p>
+            <p style="margin:0 0 16px;font-weight:bold;text-decoration:underline;">
+              RE: ESTATE LATE {e(deceasedName.ToUpperInvariant())} — OUR FILE {e(fileNumber)}
+            </p>
+            {EmailLayout.Paragraphs(note)}
+            {(isCompleted ? "" : $"<p style=\"margin:0 0 14px;color:#6B6E76;font-size:13px;\">Date for attention: {dueDate:d MMMM yyyy}</p>")}
+            <p style="margin:22px 0 0;">Kind regards,<br><br>{signOff}<br>{e(_firmName)} — {e(_division)}</p>
+            """;
+
+        return EmailLayout.Wrap(_firmName, _division, $"Estate late {deceasedName} — file {fileNumber}", inner);
     }
 
     private static string BuildEmailBody(

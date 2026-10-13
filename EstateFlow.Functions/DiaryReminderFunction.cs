@@ -1,4 +1,5 @@
-﻿using EstateFlow.Data.Context;
+﻿using EstateFlow.Core.Workflow;
+using EstateFlow.Data.Context;
 using EstateFlow.Functions.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.EntityFrameworkCore;
@@ -37,8 +38,10 @@ public class DiaryReminderFunction
             .Include(d => d.Estate)
                 .ThenInclude(e => e!.Controller)
             .Where(d => !d.IsCompleted && d.DueDate.Date <= dueSoonCutoff)
-            .Where(d => d.NotifyBy == "Email" || d.NotifyBy == "Both")
+            .Where(d => d.NotifyBy == NotifyMethod.Email || d.NotifyBy == NotifyMethod.Both)
             .ToListAsync();
+
+        var sentCount = 0;
 
         foreach (var entry in dueEntries)
         {
@@ -47,20 +50,34 @@ public class DiaryReminderFunction
 
             var urgency = entry.DueDate.Date < today ? "OVERDUE" : "due soon";
 
-            await _notificationService.NotifyAsync(
-                recipientEmail: controller.Email,
-                subject: $"[{urgency}] Diary reminder — File {entry.Estate?.FileNumber}",
-                body: $"""
-                    {entry.Note}
+            // One failed email must not stop the remaining reminders.
+            try
+            {
+                await _notificationService.NotifyAsync(
+                    recipientEmail: controller.Email,
+                    subject: $"[{urgency}] Diary reminder — File {entry.Estate?.FileNumber}",
+                    body: $"""
+                        {entry.Note}
 
-                    Due: {entry.DueDate:dd MMMM yyyy}
-                    Estate File: {entry.Estate?.FileNumber}
+                        Due: {entry.DueDate:dd MMMM yyyy}
+                        Estate File: {entry.Estate?.FileNumber}
 
-                    This reminder was sent automatically, independent of whether
-                    the EstateFlow Desktop Client is open.
-                    """);
+                        This reminder was sent automatically, independent of whether
+                        the EstateFlow Desktop Client is open.
+                        """);
+
+                sentCount++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Diary reminder failed for diary {diaryId}, estate file {file}.",
+                    entry.DiaryId,
+                    entry.Estate?.FileNumber);
+            }
         }
 
-        _logger.LogInformation("DiaryReminderFunction completed. Notified {count} diary entries.", dueEntries.Count);
+        _logger.LogInformation("DiaryReminderFunction completed. Sent {sent} of {count} diary reminders.", sentCount, dueEntries.Count);
     }
 }

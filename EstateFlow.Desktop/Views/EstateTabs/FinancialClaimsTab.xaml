@@ -1,0 +1,156 @@
+<UserControl x:Class="EstateFlow.Desktop.Views.EstateTabs.FinancialClaimsTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- DataContext: EstateDetailViewModel (inherited from EstateDetailView). -->
+
+    <ScrollViewer Padding="20">
+        <StackPanel MaxWidth="700"
+                    HorizontalAlignment="Left">
+
+            <Border Style="{StaticResource SectionCardBorderStyle}">
+                <StackPanel>
+
+                    <TextBlock Text="ADD FINANCIAL CLAIM"
+                               Style="{StaticResource SectionTitleStyle}"/>
+
+                    <TextBlock Text="Institution Name"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewClaimInstitutionName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Institution Address"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewClaimInstitutionAddress, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="Account Reference"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewClaimAccountReference, UpdateSourceTrigger=PropertyChanged}"
+                             FontFamily="{StaticResource MonoFont}"/>
+
+                    <TextBlock Text="Value (R)"
+                               Style="{StaticResource FieldLabelStyle}"/>
+
+                    <TextBox Style="{StaticResource QuickAddTextBox}"
+                             Text="{Binding NewClaimValue, UpdateSourceTrigger=PropertyChanged}"
+                             FontFamily="{StaticResource MonoFont}"/>
+
+                    <Button Content="+ Add Claim"
+                            Command="{Binding AddFinancialClaimCommand}"
+                            Background="#6E2A2A"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Padding="14,7"
+                            FontFamily="{StaticResource SansFont}"
+                            FontSize="12"
+                            Cursor="Hand"
+                            HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <ItemsControl ItemsSource="{Binding Estate.FinancialClaims}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource SectionCardBorderStyle}">
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+
+                                    <TextBlock Text="{Binding InstitutionName}"
+                                               FontFamily="{StaticResource SerifFont}"
+                                               FontSize="15"
+                                               Foreground="#16181C"
+                                               Margin="0,0,0,10"/>
+
+                                    <Grid Style="{StaticResource FieldRowGrid}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Address"
+                                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding InstitutionAddress}"
+                                                   Style="{StaticResource FieldValueStyle}"/>
+                                    </Grid>
+
+                                    <Grid Style="{StaticResource FieldRowGrid}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Account Reference"
+                                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding AccountReference}"
+                                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                                    </Grid>
+
+                                    <Grid Style="{StaticResource FieldRowGrid}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Value"
+                                                   Style="{StaticResource FieldLabelStyle}"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Value, StringFormat='R {0:N2}'}"
+                                                   Style="{StaticResource FieldValueMonoStyle}"/>
+                                    </Grid>
+
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1"
+                                            VerticalAlignment="Top">
+
+                                    <Button Content="Generate Institution Letter"
+                                            Command="{Binding DataContext.GenerateInstitutionLetterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding ClaimId}"
+                                            Background="#6E2A2A"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            FontFamily="{StaticResource SansFont}"
+                                            FontSize="11"
+                                            Padding="10,6"
+                                            Cursor="Hand"
+                                            Margin="0,0,0,8"/>
+
+                                    <Button Content="Remove"
+                                            Command="{Binding DataContext.DeleteFinancialClaimCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding ClaimId}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Foreground="#8B3A3A"
+                                            FontFamily="{StaticResource SansFont}"
+                                            FontSize="11"
+                                            Cursor="Hand"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

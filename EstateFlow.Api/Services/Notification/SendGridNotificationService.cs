@@ -24,10 +24,10 @@ public class SendGridNotificationService : INotificationService
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            // No SendGrid key configured yet (student/free-tier build) — log instead of failing,
-            // so the rest of the app remains testable without a real SendGrid account.
-            Console.WriteLine($"[NotificationService] Would send email to {recipientEmail}: {subject}");
-            return;
+            // Fail loudly rather than pretend the email went out. (The recipient's
+            // address is deliberately not logged: POPIA.)
+            throw new InvalidOperationException(
+                "Email is not configured on the API. Set 'SendGrid__ApiKey' in the App Service settings.");
         }
 
         var payload = new
@@ -45,7 +45,7 @@ public class SendGridNotificationService : INotificationService
         };
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
-        var response = await _httpClient.SendAsync(request);
+        using var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
     }
 }
